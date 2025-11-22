@@ -1,0 +1,79 @@
+---
+# Example Ansible playbook: Deploy NGINX web server
+# This can be converted to Salt, Terraform, or other formats using HAR
+
+- hosts: webservers
+  become: yes
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install nginx
+      apt:
+        name: nginx
+        state: present
+
+    - name: Install required packages
+      apt:
+        name:
+          - curl
+          - git
+          - vim
+        state: present
+
+    - name: Create web root directory
+      file:
+        path: /var/www/html
+        state: directory
+        mode: '0755'
+        owner: www-data
+        group: www-data
+
+    - name: Copy nginx configuration
+      copy:
+        src: nginx.conf
+        dest: /etc/nginx/nginx.conf
+        mode: '0644'
+        owner: root
+        group: root
+
+    - name: Deploy index.html
+      copy:
+        content: |
+          <!DOCTYPE html>
+          <html>
+          <head><title>HAR Demo</title></head>
+          <body>
+            <h1>Welcome to HAR!</h1>
+            <p>This server was configured using Hybrid Automation Router.</p>
+          </body>
+          </html>
+        dest: /var/www/html/index.html
+        mode: '0644'
+        owner: www-data
+        group: www-data
+
+    - name: Start nginx service
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+
+    - name: Create deployment user
+      user:
+        name: deployer
+        shell: /bin/bash
+        groups:
+          - www-data
+        state: present
+
+    - name: Verify nginx is running
+      command: systemctl status nginx
+      register: nginx_status
+      changed_when: false
+
+    - name: Display nginx status
+      debug:
+        msg: "Nginx is {{ 'running' if nginx_status.rc == 0 else 'not running' }}"

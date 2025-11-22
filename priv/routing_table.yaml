@@ -1,0 +1,202 @@
+# HAR Routing Table
+# Pattern-based routing rules for backend selection
+
+routes:
+  # Package management - route to appropriate package manager based on OS
+  - pattern:
+      operation: package_install
+      target:
+        os: debian
+    backends:
+      - name: apt
+        type: local
+        priority: 100
+        capabilities: [package_management]
+      - name: ansible.apt
+        type: remote
+        priority: 50
+
+  - pattern:
+      operation: package_install
+      target:
+        os: redhat
+    backends:
+      - name: yum
+        type: local
+        priority: 100
+      - name: ansible.yum
+        type: remote
+        priority: 50
+
+  - pattern:
+      operation: package_install
+      target:
+        os: alpine
+    backends:
+      - name: apk
+        type: local
+        priority: 100
+
+  # Service management - route to systemd for modern Linux
+  - pattern:
+      operation: service_*
+      target:
+        os: "*"
+    backends:
+      - name: systemd
+        type: local
+        priority: 100
+        capabilities: [service_management]
+      - name: salt.service
+        type: remote
+        priority: 50
+
+  # IoT devices - use minimal systemd variant
+  - pattern:
+      operation: service_*
+      target:
+        device_type: iot
+    backends:
+      - name: systemd_minimal
+        type: local
+        priority: 100
+        capabilities: [service_management, iot_optimized]
+      - name: har_iot_agent
+        type: remote
+        priority: 80
+
+  # Industrial devices - high security backend only
+  - pattern:
+      operation: "*"
+      target:
+        device_type: industrial
+    backends:
+      - name: secure_industrial_manager
+        type: remote
+        priority: 100
+        capabilities: [high_security, audit_logging]
+        security_tier: high
+        metadata:
+          require_mutual_tls: true
+          require_dual_approval: false
+
+  # Critical infrastructure - maximum security
+  - pattern:
+      operation: "*"
+      target:
+        device_type: critical
+    backends:
+      - name: critical_infrastructure_manager
+        type: remote
+        priority: 100
+        capabilities: [maximum_security, formal_verification]
+        security_tier: critical
+        metadata:
+          require_mutual_tls: true
+          require_hsm: true
+          require_dual_approval: true
+
+  # File operations - local filesystem
+  - pattern:
+      operation: file_*
+    backends:
+      - name: filesystem
+        type: local
+        priority: 100
+      - name: ansible.file
+        type: remote
+        priority: 50
+
+  # User management
+  - pattern:
+      operation: user_*
+    backends:
+      - name: useradd
+        type: local
+        priority: 100
+      - name: ansible.user
+        type: remote
+        priority: 50
+
+  # Cloud operations - route to Terraform
+  - pattern:
+      operation: compute_instance_*
+    backends:
+      - name: terraform
+        type: cloud
+        priority: 100
+        capabilities: [cloud_provisioning]
+      - name: ansible.ec2
+        type: cloud
+        priority: 50
+
+  - pattern:
+      operation: storage_bucket_*
+    backends:
+      - name: terraform
+        type: cloud
+        priority: 100
+
+  # IPv6 subnet-based routing for device scale
+  - pattern:
+      target:
+        ipv6_prefix: "2001:db8:1::/48"
+    backends:
+      - name: server_manager
+        type: remote
+        priority: 100
+        metadata:
+          subnet_type: servers
+
+  - pattern:
+      target:
+        ipv6_prefix: "2001:db8:2::/48"
+    backends:
+      - name: iot_manager
+        type: remote
+        priority: 100
+        metadata:
+          subnet_type: iot
+
+  - pattern:
+      target:
+        ipv6_prefix: "2001:db8:3::/48"
+    backends:
+      - name: iiot_manager
+        type: remote
+        priority: 100
+        metadata:
+          subnet_type: industrial
+
+  # Environment-based routing
+  - pattern:
+      target:
+        environment: dev
+    backends:
+      - name: dev_backend
+        type: local
+        priority: 90
+        metadata:
+          allow_dangerous_operations: true
+
+  - pattern:
+      target:
+        environment: prod
+    backends:
+      - name: prod_backend
+        type: remote
+        priority: 100
+        metadata:
+          require_approval: true
+          audit_logging: true
+
+  # Fallback - route everything else to passthrough
+  - pattern:
+      operation: "*"
+    backends:
+      - name: passthrough
+        type: local
+        priority: 1
+        capabilities: [all]
+        metadata:
+          description: "Fallback backend for unsupported operations"

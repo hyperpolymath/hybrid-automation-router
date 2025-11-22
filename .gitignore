@@ -1,0 +1,43 @@
+# Elixir
+/_build/
+/deps/
+/doc/
+*.ez
+*.beam
+/config/*.secret.exs
+.elixir_ls/
+
+# Mix
+mix.lock
+
+# Dialyzer
+/priv/plts/*.plt
+/priv/plts/*.plt.hash
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+cover/
+logs/
+
+# IPFS
+.ipfs/
+
+# Secrets
+*.pem
+*.key
+*.crt
+secrets/
+
+# Deployment
+.env
+docker-compose.override.yml
