@@ -1,0 +1,222 @@
+# HAR GitLab CI/CD Configuration
+
+image: elixir:1.15-alpine
+
+variables:
+  MIX_ENV: "test"
+
+# Cache Mix dependencies
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - deps/
+    - _build/
+
+# Define pipeline stages
+stages:
+  - deps
+  - build
+  - test
+  - quality
+  - security
+  - deploy
+
+# Install dependencies
+dependencies:
+  stage: deps
+  script:
+    - mix local.hex --force
+    - mix local.rebar --force
+    - mix deps.get
+    - mix deps.compile
+  artifacts:
+    paths:
+      - deps/
+      - _build/
+    expire_in: 1 hour
+
+# Compile the project
+compile:
+  stage: build
+  needs: [dependencies]
+  script:
+    - mix compile --warnings-as-errors
+  artifacts:
+    paths:
+      - _build/
+    expire_in: 1 hour
+
+# Run unit tests
+test:unit:
+  stage: test
+  needs: [compile]
+  script:
+    - mix test
+  coverage: '/\[TOTAL\]\s+(\d+\.\d+)%/'
+
+# Run tests with coverage
+test:coverage:
+  stage: test
+  needs: [compile]
+  script:
+    - mix test --cover
+  coverage: '/\[TOTAL\]\s+(\d+\.\d+)%/'
+  artifacts:
+    paths:
+      - cover/
+    expire_in: 30 days
+
+# Code formatting check
+format:
+  stage: quality
+  needs: [compile]
+  script:
+    - mix format --check-formatted
+
+# Static analysis with Credo
+lint:credo:
+  stage: quality
+  needs: [compile]
+  script:
+    - mix credo --strict
+  allow_failure: true
+
+# Type checking with Dialyzer
+dialyzer:
+  stage: quality
+  needs: [compile]
+  script:
+    - mix dialyzer
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}-plt
+    paths:
+      - priv/plts/
+  allow_failure: true
+
+# Security audit
+security:audit:
+  stage: security
+  needs: [compile]
+  script:
+    - mix hex.audit
+  allow_failure: true
+
+# RSR compliance check
+rsr:compliance:
+  stage: quality
+  needs: []
+  script:
+    - apk add --no-cache just
+    - just rsr-check
+
+# Generate documentation
+docs:
+  stage: build
+  needs: [compile]
+  script:
+    - mix docs
+  artifacts:
+    paths:
+      - doc/
+    expire_in: 30 days
+
+# Build production release
+build:prod:
+  stage: build
+  only:
+    - tags
+    - main
+  script:
+    - MIX_ENV=prod mix do deps.get, compile, release
+  artifacts:
+    paths:
+      - _build/prod/rel/har/
+    expire_in: 90 days
+
+# Deploy to staging (only on main branch)
+deploy:staging:
+  stage: deploy
+  only:
+    - main
+  needs: [build:prod]
+  script:
+    - echo "Deploy to staging environment"
+    # Add actual deployment commands here
+  environment:
+    name: staging
+    url: https://staging.har.example.com
+  when: manual
+
+# Deploy to production (only on tags)
+deploy:production:
+  stage: deploy
+  only:
+    - tags
+  needs: [build:prod]
+  script:
+    - echo "Deploy to production environment"
+    # Add actual deployment commands here
+  environment:
+    name: production
+    url: https://har.example.com
+  when: manual
+
+# Container image build (optional)
+container:build:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  only:
+    - tags
+    - main
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA .
+    - docker build -t $CI_REGISTRY_IMAGE:latest .
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+    - docker push $CI_REGISTRY_IMAGE:latest
+  when: manual
+
+# Nightly builds
+nightly:
+  stage: build
+  only:
+    - schedules
+  script:
+    - mix test
+    - mix dialyzer
+    - mix credo --strict
+
+# Performance benchmarks
+benchmark:
+  stage: test
+  needs: [compile]
+  script:
+    - echo "Run performance benchmarks"
+    # mix run benchmarks/routing.exs
+  when: manual
+  allow_failure: true
+
+# Dependency updates check
+deps:outdated:
+  stage: security
+  needs: []
+  script:
+    - mix hex.outdated
+  only:
+    - schedules
+  allow_failure: true
+
+# Release preparation
+release:prepare:
+  stage: deploy
+  only:
+    - tags
+  needs: [test:coverage, lint:credo, docs]
+  script:
+    - echo "Preparing release $CI_COMMIT_TAG"
+    - mix hex.build
+  artifacts:
+    paths:
+      - *.tar
+    expire_in: 90 days

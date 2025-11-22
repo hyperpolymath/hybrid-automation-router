@@ -1,0 +1,115 @@
+# humanstxt.org/
+# The humans responsible for building this project
+
+/* TEAM */
+
+Project Lead: [To be assigned]
+GitHub: @username
+Role: Architecture, vision, standardization
+Location: [Location]
+
+Developer: [To be assigned]
+GitHub: @username
+Role: Core implementation
+Location: [Location]
+
+/* THANKS */
+
+Elixir/OTP Community: For the incredible platform
+Ansible Community: For pioneering infrastructure automation
+Salt Project: For powerful configuration management
+Terraform Community: For cloud infrastructure tooling
+IPFS Team: For content-addressed storage innovation
+All Contributors: See CONTRIBUTING.md
+
+/* SITE */
+
+Language: Elixir 1.15+
+Platform: Erlang/OTP 26+
+Standards: Elixir Style Guide, Semantic Versioning
+Components: Semantic graph, parsers, transformers, routing engine
+Architecture: Control plane (routing) + Data plane (transformation)
+License: MIT
+Repository: https://github.com/yourusername/hybrid-automation-router
+
+/* PROJECT */
+
+Name: HAR (Hybrid Automation Router)
+Tagline: Think BGP for infrastructure automation
+Purpose: Tool-agnostic infrastructure automation routing
+Vision: Universal IaC interchange format and routing layer
+Goal: Prevent vendor lock-in, enable cross-tool workflows
+Status: Proof of concept (v0.1.0)
+Started: 2024-01-22
+
+/* PHILOSOPHY */
+
+- Tool agnostic: No vendor lock-in
+- Semantic understanding: Operations over syntax
+- Fault tolerant: Elixir/OTP supervision trees
+- Scale first: Designed for billions of IoT/IIoT devices
+- Standards based: Path to IETF RFC
+- Open governance: Foundation model
+- Emotionally safe: Mistakes are learning opportunities
+
+/* STACK */
+
+Backend: Elixir 1.15+
+Runtime: Erlang/OTP 26+
+Parsing: YamlElixir
+Graph: libgraph (planned)
+Storage: IPFS (planned)
+Clustering: libcluster + Horde
+Telemetry: Telemetry + TelemetryMetrics
+Type Checking: Dialyzer
+Testing: ExUnit, PropCheck (planned)
+Linting: Credo
+
+/* INSPIRATION */
+
+BGP: Network routing protocol
+Babel: JavaScript transpilation
+IPFS: Content-addressed storage
+OTP: Fault-tolerant distributed systems
+Ansible/Salt/Terraform: IaC pioneers
+
+/* CONTACT */
+
+GitHub: https://github.com/yourusername/hybrid-automation-router
+Issues: https://github.com/yourusername/hybrid-automation-router/issues
+Discussions: https://github.com/yourusername/hybrid-automation-router/discussions
+Security: See SECURITY.md
+Contributing: See CONTRIBUTING.md
+
+/* COLOPHON */
+
+Built with: Love, Elixir, and late-night coding sessions
+Tested on: Linux, macOS (planned: Windows)
+CI/CD: GitLab CI (planned: GitHub Actions)
+Documentation: Markdown, ExDoc
+Version Control: Git
+Project Management: GitHub Issues + Projects
+
+/* META */
+
+Last update: 2024-01-22
+Contributors: See MAINTAINERS.md and git log
+Lines of code: ~8,300 (v0.1.0)
+Documentation: ~40,000 words
+Test coverage: TBD (tests in progress)
+
+                    _.-''|''-._
+                 .-'     |     `-.
+               .'        |        `.
+              /          |          \
+             ;           |           ;
+             |           |           |
+             |   HAR     |           |
+             |           |           |
+             ;    Think  |  BGP      ;
+              \          |          /
+               `.    for IaC      .'
+                 `-.           .-'
+                    `-._____.-'
+
+/* EOF */

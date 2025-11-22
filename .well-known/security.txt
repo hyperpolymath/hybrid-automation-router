@@ -1,0 +1,25 @@
+# Security Contact Information (RFC 9116)
+# https://securitytxt.org/
+
+Contact: https://github.com/yourusername/hybrid-automation-router/security/advisories/new
+Expires: 2025-01-22T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://raw.githubusercontent.com/yourusername/hybrid-automation-router/main/.well-known/security.txt
+
+# Security Policy
+Policy: https://github.com/yourusername/hybrid-automation-router/blob/main/SECURITY.md
+
+# Acknowledgments
+Acknowledgments: https://github.com/yourusername/hybrid-automation-router/blob/main/SECURITY.md#acknowledgments
+
+# Encryption
+# Encryption: https://example.com/pgp-key.txt
+# (PGP key to be added once project is public)
+
+# Additional Information
+# HAR (Hybrid Automation Router) - Infrastructure automation routing platform
+# Report security vulnerabilities via GitHub Security Advisories (preferred)
+# or email (contact to be added)
+#
+# Response time: 48 hours acknowledgment, 7-90 days fix (severity-dependent)
+# Please do NOT open public issues for security vulnerabilities

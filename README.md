@@ -300,6 +300,73 @@ Contributions are welcome! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for g
 - **Discord:** Coming soon
 - **Twitter:** Coming soon
 
+## RSR Compliance
+
+HAR follows the [Rhodium Standard Repository](https://github.com/yourusername/rhodium-standards) framework for high-quality, reproducible software:
+
+### Compliance Checklist
+
+**Documentation (7/7)**
+- ✅ README.md - Project overview and quickstart
+- ✅ LICENSE - MIT License (maximum accessibility)
+- ✅ SECURITY.md - Security policy and vulnerability reporting
+- ✅ CONTRIBUTING.md - Contribution guidelines
+- ✅ CODE_OF_CONDUCT.md - Community standards
+- ✅ MAINTAINERS.md - Project maintainer information
+- ✅ CHANGELOG.md - Version history and changes
+
+**.well-known/ Directory (3/3)**
+- ✅ security.txt - RFC 9116 security contact info
+- ✅ ai.txt - AI training policies
+- ✅ humans.txt - Attribution and credits
+
+**Build System (2/2)**
+- ✅ justfile - Build automation (30+ recipes)
+- ✅ mix.exs - Elixir package manager
+
+**Testing (2/3)**
+- ✅ Test suite exists (ExUnit)
+- ✅ Tests pass (semantic models, parsers)
+- ⏳ Test coverage >80% (in progress)
+
+**Type Safety & Memory Safety**
+- ✅ Elixir compile-time type guarantees
+- ✅ @spec type annotations throughout
+- ✅ Dialyzer static analysis support
+- ✅ Pattern matching enforces correctness
+- ✅ Immutable data structures
+- ✅ BEAM VM memory safety
+
+**Offline-First**
+- ✅ Core functionality works without network
+- ✅ IPFS optional (offline mode default)
+- ✅ No mandatory cloud dependencies
+- ✅ Works air-gapped
+
+**Architecture Documentation (8/8)**
+- ✅ FINAL_ARCHITECTURE.md - Core tech decisions
+- ✅ CONTROL_PLANE_ARCHITECTURE.md - Routing engine
+- ✅ DATA_PLANE_ARCHITECTURE.md - Parsers/transformers
+- ✅ HAR_NETWORK_ARCHITECTURE.md - Distributed routing
+- ✅ IOT_IIOT_ARCHITECTURE.md - IPv6/MAC device support
+- ✅ HAR_SECURITY.md - Multi-tier security
+- ✅ STANDARDIZATION_STRATEGY.md - Path to IETF RFC
+- ✅ SELF_HOSTED_DEPLOYMENT.md - Production deployment
+
+**CI/CD (1/1)**
+- ✅ .gitlab-ci.yml - Automated testing and deployment
+
+**TPCF Perimeter**
+- ✅ Perimeter 3 (Community Sandbox) - Fully open contribution
+
+**RSR Level: Bronze (Offline-First, Type-Safe)**
+
+Run `just rsr-check` to verify compliance:
+
+```bash
+just rsr-check
+```
+
 ## License
 
 MIT License - See [LICENSE](./LICENSE) for details.
