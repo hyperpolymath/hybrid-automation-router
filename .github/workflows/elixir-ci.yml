@@ -1,0 +1,38 @@
+name: Elixir CI
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: '26'
+          elixir-version: '1.15'
+      
+      - name: Cache deps
+        uses: actions/cache@v3
+        with:
+          path: deps
+          key: deps-${{ hashFiles('mix.lock') }}
+      
+      - name: Install deps
+        run: mix deps.get
+      
+      - name: Compile
+        run: mix compile --warnings-as-errors
+      
+      - name: Credo lint
+        run: mix credo --strict
+      
+      - name: Dialyzer
+        run: mix dialyzer
+      
+      - name: Run tests
+        run: mix test --cover
+      
+      - name: Security check
+        run: mix deps.audit || true
