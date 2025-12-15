@@ -1,43 +1,79 @@
-# Elixir
-/_build/
-/deps/
-/doc/
-*.ez
-*.beam
-/config/*.secret.exs
-.elixir_ls/
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# RSR-compliant .gitignore
 
-# Mix
-mix.lock
-
-# Dialyzer
-/priv/plts/*.plt
-/priv/plts/*.plt.hash
-
-# IDE
-.idea/
-.vscode/
+# OS & Editor
+.DS_Store
+Thumbs.db
 *.swp
 *.swo
 *~
+.idea/
+.vscode/
 
-# OS
-.DS_Store
-Thumbs.db
+# Build
+/target/
+/_build/
+/build/
+/dist/
+/out/
 
-# Testing
-cover/
-logs/
+# Dependencies
+/node_modules/
+/vendor/
+/deps/
+/.elixir_ls/
 
-# IPFS
-.ipfs/
+# Rust
+# Cargo.lock  # Keep for binaries
+
+# Elixir
+/cover/
+/doc/
+*.ez
+erl_crash.dump
+
+# Julia
+*.jl.cov
+*.jl.mem
+/Manifest.toml
+
+# ReScript
+/lib/bs/
+/.bsb.lock
+
+# Python (SaltStack only)
+__pycache__/
+*.py[cod]
+.venv/
+
+# Ada/SPARK
+*.ali
+/obj/
+/bin/
+
+# Haskell
+/.stack-work/
+/dist-newstyle/
+
+# Chapel
+*.chpl.tmp.*
 
 # Secrets
+.env
+.env.*
 *.pem
 *.key
-*.crt
 secrets/
 
-# Deployment
-.env
-docker-compose.override.yml
+# Test/Coverage
+/coverage/
+htmlcov/
+
+# Logs
+*.log
+/logs/
+
+# Temp
+/tmp/
+*.tmp
+*.bak
