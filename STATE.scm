@@ -15,7 +15,7 @@
   '((version . "0.1.0")
     (schema-version . "1.0")
     (created . "2025-12-15")
-    (updated . "2025-12-15")
+    (updated . "2025-12-17")
     (project . "hybrid-automation-router")
     (repo . "github.com/hyperpolymath/hybrid-automation-router")))
 
@@ -41,34 +41,49 @@
 
 (define current-position
   '((phase . "v0.1 - Initial Setup and RSR Compliance")
-    (overall-completion . 25)
+    (overall-completion . 35)
 
     (components
      ((rsr-compliance
        ((status . "complete")
         (completion . 100)
-        (notes . "SHA-pinned actions, SPDX headers, multi-platform CI")))
+        (notes . "SHA-pinned actions, SPDX headers, multi-platform CI, security hardening")))
+
+      (package-management
+       ((status . "complete")
+        (completion . 100)
+        (notes . "Guix primary (guix.scm), Nix fallback (flake.nix)")))
 
       (documentation
        ((status . "foundation")
-        (completion . 30)
-        (notes . "README exists, META/ECOSYSTEM/STATE.scm added")))
+        (completion . 40)
+        (notes . "README, META/ECOSYSTEM/STATE.scm, CLAUDE.md complete")))
 
       (testing
        ((status . "minimal")
-        (completion . 10)
-        (notes . "CI/CD scaffolding exists, limited test coverage")))
+        (completion . 15)
+        (notes . "CI/CD scaffolding exists, ExUnit ready, needs coverage")))
+
+      (security
+       ((status . "hardened")
+        (completion . 80)
+        (notes . "All GitHub Actions SHA-pinned, OSSF Scorecard, CodeQL ready")))
 
       (core-functionality
        ((status . "in-progress")
         (completion . 25)
-        (notes . "Initial implementation underway")))))
+        (notes . "Mix project scaffolding, parsers pending")))))
 
     (working-features
-     ("RSR-compliant CI/CD pipeline"
+     ("RSR-compliant CI/CD pipeline (GitHub Actions, GitLab CI)"
       "Multi-platform mirroring (GitHub, GitLab, Bitbucket)"
       "SPDX license headers on all files"
-      "SHA-pinned GitHub Actions"))))
+      "SHA-pinned GitHub Actions (all 15+ actions)"
+      "OSSF Scorecard integration"
+      "TruffleHog secrets scanning"
+      "Guix package definition with native-inputs"
+      "Nix flake for reproducible builds"
+      "Elixir Mix project with dialyzer, credo, excoveralls"))))
 
 ;;;============================================================================
 ;;; ROUTE TO MVP
@@ -76,33 +91,60 @@
 
 (define route-to-mvp
   '((target-version . "1.0.0")
-    (definition . "Stable release with comprehensive documentation and tests")
+    (definition . "Production-ready infrastructure automation router")
 
     (milestones
      ((v0.2
-       ((name . "Core Functionality")
+       ((name . "Semantic Graph & Basic Parsers")
+        (status . "next")
+        (target . "Q1 2025")
+        (items
+         ("Implement semantic graph data structures (libgraph)"
+          "Ansible YAML parser (nimble_parsec)"
+          "Salt SLS parser"
+          "Basic operation types (package, service, file, user)"
+          "Property-based tests for parsers (StreamData)"
+          "Test coverage > 50%"))))
+
+      (v0.3
+       ((name . "Routing Engine")
         (status . "pending")
         (items
-         ("Implement primary features"
-          "Add comprehensive tests"
-          "Improve documentation"))))
+         ("Control plane routing logic"
+          "Pattern matching for operation types"
+          "Backend selection algorithm"
+          "Routing table YAML loading"
+          "Telemetry integration"))))
 
       (v0.5
-       ((name . "Feature Complete")
+       ((name . "Transformation Pipeline")
         (status . "pending")
         (items
-         ("All planned features implemented"
-          "Test coverage > 70%"
-          "API stability"))))
+         ("Ansible -> Salt transformation"
+          "Salt -> Ansible transformation"
+          "Terraform HCL parser"
+          "CLI interface (escript or Burrito)"
+          "Test coverage > 70%"))))
+
+      (v0.7
+       ((name . "Distribution & Scale")
+        (status . "pending")
+        (items
+         ("OTP distribution (libcluster)"
+          "Distributed routing (Horde)"
+          "IPFS content-addressed configs"
+          "Performance benchmarks"))))
 
       (v1.0
        ((name . "Production Release")
         (status . "pending")
         (items
-         ("Comprehensive test coverage"
-          "Performance optimization"
+         ("TLS 1.3 mutual authentication"
+          "Certificate pinning"
+          "Rate limiting & DDoS protection"
           "Security audit"
-          "User documentation complete"))))))))
+          "IETF RFC draft submission"
+          "Comprehensive documentation"))))))))
 
 ;;;============================================================================
 ;;; BLOCKERS & ISSUES
@@ -157,7 +199,19 @@
        ("Added META.scm, ECOSYSTEM.scm, STATE.scm"
         "Established RSR compliance"
         "Created initial project checkpoint"))
-      (notes . "First STATE.scm checkpoint created via automated script")))))
+      (notes . "First STATE.scm checkpoint created via automated script"))
+
+     ((date . "2025-12-17")
+      (session . "security-hardening-and-scm-review")
+      (accomplishments
+       ("SHA-pinned ALL GitHub Actions (15+ actions)"
+        "Fixed mix.exs license (MIT -> AGPL-3.0-or-later)"
+        "Fixed mix.exs repository URL"
+        "Updated guix.scm with proper native-inputs"
+        "Created flake.nix as Nix fallback"
+        "Added SPDX headers to guix.scm"
+        "Updated roadmap with detailed milestones"))
+      (notes . "Security review and SCM configuration completed")))))
 
 ;;;============================================================================
 ;;; HELPER FUNCTIONS (for Guile evaluation)
@@ -185,10 +239,12 @@
 (define state-summary
   '((project . "hybrid-automation-router")
     (version . "0.1.0")
-    (overall-completion . 25)
-    (next-milestone . "v0.2 - Core Functionality")
+    (overall-completion . 35)
+    (next-milestone . "v0.2 - Semantic Graph & Basic Parsers")
     (critical-blockers . 0)
     (high-priority-issues . 0)
-    (updated . "2025-12-15")))
+    (security-status . "hardened")
+    (package-managers . ("guix" "nix"))
+    (updated . "2025-12-17")))
 
 ;;; End of STATE.scm

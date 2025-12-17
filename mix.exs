@@ -83,9 +83,9 @@ defmodule HAR.MixProject do
   defp package do
     [
       name: "har",
-      licenses: ["MIT"],
+      licenses: ["AGPL-3.0-or-later"],
       links: %{
-        "GitHub" => "https://github.com/yourusername/hybrid-automation-router"
+        "GitHub" => "https://github.com/hyperpolymath/hybrid-automation-router"
       }
     ]
   end

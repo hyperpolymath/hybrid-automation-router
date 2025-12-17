@@ -7,14 +7,14 @@ jobs:
     env:
       MIX_ENV: test
     steps:
-      - uses: actions/checkout@v6
-      - uses: erlef/setup-beam@v1
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: erlef/setup-beam@e6d7c94229049569db56a7ad5a540c051a010af9 # v1.20.4
         with:
           otp-version: '26'
           elixir-version: '1.15'
-      
+
       - name: Cache deps
-        uses: actions/cache@v5
+        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
         with:
           path: deps
           key: deps-${{ hashFiles('mix.lock') }}
