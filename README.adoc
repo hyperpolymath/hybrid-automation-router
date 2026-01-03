@@ -1,7 +1,7 @@
 = HAR - Hybrid Automation Router
 
 image:https://img.shields.io/badge/License-MPL_2.0-blue.svg[MPL-2.0,link="https://opensource.org/licenses/MPL-2.0"]
-image:https://img.shields.io/badge/Philosophy-Palimpsest-purple.svg[Palimpsest,link="https://github.com/hyperpolymath/palimpsest-licence"]
+image:https://img.shields.io/badge/Philosophy-Palimpsest-purple.svg[Palimpsest,link="https://github.com/hyperpolymath/palimpsest-license"]
 
 
 *Think BGP for infrastructure automation.* HAR treats configuration management like network packet routing - it parses configs from any IaC tool (Ansible, Salt, Terraform, bash), extracts semantic operations, and routes/transforms them to any target format.
