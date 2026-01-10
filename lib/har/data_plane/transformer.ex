@@ -51,6 +51,10 @@ defmodule HAR.DataPlane.Transformer do
     HAR.DataPlane.Transformers.Terraform.transform(graph, opts)
   end
 
+  defp do_transform(:puppet, graph, opts) do
+    HAR.DataPlane.Transformers.Puppet.transform(graph, opts)
+  end
+
   defp do_transform(target, _graph, _opts) do
     {:error, {:unsupported_target, target}}
   end
