@@ -23,11 +23,12 @@ defmodule HAR.Semantic.Graph do
 
   ## Examples
 
-      iex> Graph.new()
-      %Graph{vertices: [], edges: []}
-
-      iex> Graph.new(vertices: [op1, op2], edges: [dep1])
-      %Graph{vertices: [op1, op2], edges: [dep1]}
+      iex> alias HAR.Semantic.Graph
+      iex> graph = Graph.new()
+      iex> graph.vertices
+      []
+      iex> graph.edges
+      []
   """
   def new(opts \\ []) do
     %__MODULE__{

@@ -72,6 +72,7 @@ defmodule HAR.Semantic.Operation do
 
   ## Examples
 
+      iex> alias HAR.Semantic.Operation
       iex> op = Operation.new(:package_install, %{package: "nginx"})
       iex> op.type
       :package_install
@@ -129,7 +130,7 @@ defmodule HAR.Semantic.Operation do
   end
 
   defp generate_id do
-    UUID.uuid4()
+    __MODULE__.UUID.uuid4()
   end
 
   defmodule UUID do

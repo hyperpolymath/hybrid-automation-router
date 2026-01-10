@@ -243,7 +243,7 @@ defmodule HAR.DataPlane.Transformers.Ansible do
   end
 
   defp operation_to_task(%Operation{type: type} = op) do
-    Logger.warn("Unsupported operation type for Ansible: #{type}")
+    Logger.warning("Unsupported operation type for Ansible: #{type}")
 
     # Generate comment task
     %{
@@ -292,14 +292,6 @@ defmodule HAR.DataPlane.Transformers.Ansible do
 
     playbook = [play]
 
-    case YamlElixir.write_to_string(playbook) do
-      {:ok, yaml} ->
-        {:ok, yaml}
-
-      {:error, reason} ->
-        {:error, {:yaml_generation_error, reason}}
-    end
-  rescue
-    e -> {:error, {:yaml_generation_error, Exception.message(e)}}
+    HAR.Utils.YamlFormatter.to_yaml(playbook)
   end
 end

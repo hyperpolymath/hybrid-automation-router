@@ -10,12 +10,6 @@ defmodule HAR.MixProject do
       deps: deps(),
       dialyzer: dialyzer(),
       test_coverage: [tool: ExCoveralls],
-      preferred_cli_env: [
-        coveralls: :test,
-        "coveralls.detail": :test,
-        "coveralls.post": :test,
-        "coveralls.html": :test
-      ],
       description: description(),
       package: package()
     ]
@@ -25,6 +19,17 @@ defmodule HAR.MixProject do
     [
       extra_applications: [:logger, :crypto, :ssl],
       mod: {HAR.Application, []}
+    ]
+  end
+
+  def cli do
+    [
+      preferred_envs: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
+      ]
     ]
   end
 

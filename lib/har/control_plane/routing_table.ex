@@ -68,7 +68,7 @@ defmodule HAR.ControlPlane.RoutingTable do
         {:ok, %{routes: routes, path: table_path}}
 
       {:error, reason} ->
-        Logger.warn("Failed to load routing table: #{inspect(reason)}, using defaults")
+        Logger.warning("Failed to load routing table: #{inspect(reason)}, using defaults")
         {:ok, %{routes: default_routes(), path: nil}}
     end
   end

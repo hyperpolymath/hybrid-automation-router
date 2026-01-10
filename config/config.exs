@@ -16,33 +16,8 @@ config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id, :operation_id]
 
-# Configure telemetry
-config :har, HAR.Telemetry,
-  metrics: [
-    # Control Plane metrics
-    counter("har.control_plane.routing.decisions.total"),
-    summary("har.control_plane.routing.latency",
-      unit: {:native, :millisecond},
-      tags: [:operation_type]
-    ),
-    counter("har.control_plane.policy.violations.total", tags: [:policy_name]),
-
-    # Data Plane metrics
-    counter("har.data_plane.parse.total", tags: [:format, :status]),
-    summary("har.data_plane.parse.latency",
-      unit: {:native, :millisecond},
-      tags: [:format]
-    ),
-    counter("har.data_plane.transform.total", tags: [:target, :status]),
-    summary("har.data_plane.transform.latency",
-      unit: {:native, :millisecond},
-      tags: [:target]
-    ),
-
-    # Graph metrics
-    distribution("har.semantic.graph.operation_count", buckets: [0, 10, 50, 100, 500, 1000]),
-    distribution("har.semantic.graph.dependency_count", buckets: [0, 10, 50, 100, 500, 1000])
-  ]
+# Telemetry metrics are defined in HAR.Telemetry module at runtime
+# (Telemetry.Metrics functions can't be called at config compile time)
 
 # Import environment-specific config
 import_config "#{config_env()}.exs"

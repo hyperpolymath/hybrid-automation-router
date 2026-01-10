@@ -9,4 +9,4 @@ config :har,
   ipfs_enabled: false
 
 config :logger, :console,
-  level: :warn
+  level: :warning

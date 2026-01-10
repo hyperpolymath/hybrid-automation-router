@@ -33,9 +33,6 @@ defmodule HAR.Application do
       # Distributed cluster
       {Cluster.Supervisor, [topologies(), [name: HAR.ClusterSupervisor]]},
 
-      # Routing table registry
-      {HAR.ControlPlane.RoutingTable, []},
-
       # Security manager
       {HAR.Security.Manager, []},
 

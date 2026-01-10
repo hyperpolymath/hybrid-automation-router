@@ -76,7 +76,7 @@ defmodule HAR.DataPlane.Parsers.Ansible do
     task_name = Map.get(task, "name", "Unnamed task")
 
     Operation.new(
-      normalize_module_type(module_name),
+      normalize_module_type(module_name, module_args),
       normalize_module_params(module_name, module_args),
       id: generate_task_id(play_idx, task_idx),
       target: extract_target(hosts, task),
@@ -115,22 +115,36 @@ defmodule HAR.DataPlane.Parsers.Ansible do
   defp normalize_args(args) when is_list(args), do: %{"_list" => args}
   defp normalize_args(args), do: %{"_value" => args}
 
-  defp normalize_module_type("apt"), do: :package_install
-  defp normalize_module_type("yum"), do: :package_install
-  defp normalize_module_type("dnf"), do: :package_install
-  defp normalize_module_type("package"), do: :package_install
-  defp normalize_module_type("service"), do: :service_control
-  defp normalize_module_type("systemd"), do: :service_control
-  defp normalize_module_type("copy"), do: :file_copy
-  defp normalize_module_type("template"), do: :file_template
-  defp normalize_module_type("file"), do: :file_write
-  defp normalize_module_type("lineinfile"), do: :file_write
-  defp normalize_module_type("user"), do: :user_create
-  defp normalize_module_type("group"), do: :group_create
-  defp normalize_module_type("command"), do: :command_run
-  defp normalize_module_type("shell"), do: :command_run
-  defp normalize_module_type("script"), do: :script_execute
-  defp normalize_module_type(module), do: String.to_atom("ansible." <> module)
+  defp normalize_module_type("apt", _args), do: :package_install
+  defp normalize_module_type("yum", _args), do: :package_install
+  defp normalize_module_type("dnf", _args), do: :package_install
+  defp normalize_module_type("package", _args), do: :package_install
+
+  defp normalize_module_type("service", args), do: service_type_from_state(args)
+  defp normalize_module_type("systemd", args), do: service_type_from_state(args)
+
+  defp normalize_module_type("copy", _args), do: :file_copy
+  defp normalize_module_type("template", _args), do: :file_template
+  defp normalize_module_type("file", _args), do: :file_write
+  defp normalize_module_type("lineinfile", _args), do: :file_write
+  defp normalize_module_type("user", _args), do: :user_create
+  defp normalize_module_type("group", _args), do: :group_create
+  defp normalize_module_type("command", _args), do: :command_run
+  defp normalize_module_type("shell", _args), do: :command_run
+  defp normalize_module_type("script", _args), do: :script_execute
+  defp normalize_module_type(module, _args), do: String.to_atom("ansible." <> module)
+
+  defp service_type_from_state(args) when is_map(args) do
+    case Map.get(args, "state") do
+      "started" -> :service_start
+      "stopped" -> :service_stop
+      "restarted" -> :service_restart
+      "reloaded" -> :service_restart
+      _ -> :service_control
+    end
+  end
+
+  defp service_type_from_state(_), do: :service_control
 
   defp normalize_module_params("apt", args) do
     %{

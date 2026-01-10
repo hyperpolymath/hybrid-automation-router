@@ -179,7 +179,7 @@ defmodule HAR.DataPlane.Transformers.Salt do
 
   defp operation_to_state(%Operation{type: type} = op, idx) do
     # Fallback for unsupported types
-    Logger.warn("Unsupported operation type for Salt: #{type}")
+    Logger.warning("Unsupported operation type for Salt: #{type}")
 
     # Generate passthrough state
     state_id = state_id_for_operation(op, idx, "unsupported")
@@ -213,30 +213,8 @@ defmodule HAR.DataPlane.Transformers.Salt do
   defp maybe_add(list, _key, nil), do: list
   defp maybe_add(list, key, value), do: list ++ [%{key => value}]
 
-  defp format_sls(states, opts) do
-    pretty = Keyword.get(opts, :pretty, true)
-
+  defp format_sls(states, _opts) do
     sls_map = Enum.into(states, %{})
-
-    case YamlElixir.write_to_string(sls_map) do
-      {:ok, yaml} ->
-        if pretty do
-          {:ok, prettify_yaml(yaml)}
-        else
-          {:ok, yaml}
-        end
-
-      {:error, reason} ->
-        {:error, {:yaml_generation_error, reason}}
-    end
-  rescue
-    e -> {:error, {:yaml_generation_error, Exception.message(e)}}
-  end
-
-  defp prettify_yaml(yaml) do
-    # Basic prettification
-    yaml
-    |> String.replace(~r/- \{/, "  - {")
-    |> String.replace(~r/: \[/, ":\n    - ")
+    HAR.Utils.YamlFormatter.to_yaml(sls_map)
   end
 end
