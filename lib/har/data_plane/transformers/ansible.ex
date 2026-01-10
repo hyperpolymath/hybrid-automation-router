@@ -105,79 +105,6 @@ defmodule HAR.DataPlane.Transformers.Ansible do
     maybe_add_when(task, op)
   end
 
-  # Determine package manager from operation target or options
-  defp get_package_manager(op, opts) do
-    # Priority: operation target > opts > default
-    os = get_os_from_target(op.target) || Keyword.get(opts, :os)
-
-    case os do
-      nil ->
-        # Use generic 'package' module for OS-agnostic operations
-        "package"
-      os_name ->
-        os_key = os_name |> to_string() |> String.downcase()
-        Map.get(@os_package_managers, os_key, "package")
-    end
-  end
-
-  defp get_os_from_target(nil), do: nil
-  defp get_os_from_target(target) when is_map(target) do
-    target[:os] || target[:os_family] || target["os"] || target["os_family"]
-  end
-  defp get_os_from_target(_), do: nil
-
-  # Build package params based on package manager specifics
-  defp build_package_params("apt", name, state, op) do
-    params = %{"name" => name, "state" => state}
-    params = if op.params[:update_cache], do: Map.put(params, "update_cache", true), else: params
-    params
-  end
-
-  defp build_package_params("yum", name, state, _op) do
-    %{"name" => name, "state" => state}
-  end
-
-  defp build_package_params("dnf", name, state, _op) do
-    %{"name" => name, "state" => state}
-  end
-
-  defp build_package_params("zypper", name, state, _op) do
-    %{"name" => name, "state" => state}
-  end
-
-  defp build_package_params("apk", name, state, op) do
-    params = %{"name" => name, "state" => state}
-    params = if op.params[:update_cache], do: Map.put(params, "update_cache", true), else: params
-    params
-  end
-
-  defp build_package_params("pacman", name, state, op) do
-    params = %{"name" => name, "state" => state}
-    params = if op.params[:update_cache], do: Map.put(params, "update_cache", true), else: params
-    params
-  end
-
-  defp build_package_params("homebrew", name, state, _op) do
-    %{"name" => name, "state" => state}
-  end
-
-  defp build_package_params("win_chocolatey", name, state, _op) do
-    %{"name" => name, "state" => state}
-  end
-
-  defp build_package_params("pkgng", name, state, _op) do
-    %{"name" => name, "state" => state}
-  end
-
-  defp build_package_params("package", name, state, _op) do
-    # Generic package module - most portable
-    %{"name" => name, "state" => state}
-  end
-
-  defp build_package_params(_manager, name, state, _op) do
-    %{"name" => name, "state" => state}
-  end
-
   defp operation_to_task(%Operation{type: :service_start} = op, _opts) do
     service_name = op.params[:service] || op.params[:name]
 
@@ -541,6 +468,83 @@ defmodule HAR.DataPlane.Transformers.Ansible do
       }
     }
   end
+
+  # Package manager helper functions
+
+  # Determine package manager from operation target or options
+  defp get_package_manager(op, opts) do
+    # Priority: operation target > opts > default
+    os = get_os_from_target(op.target) || Keyword.get(opts, :os)
+
+    case os do
+      nil ->
+        # Use generic 'package' module for OS-agnostic operations
+        "package"
+      os_name ->
+        os_key = os_name |> to_string() |> String.downcase()
+        Map.get(@os_package_managers, os_key, "package")
+    end
+  end
+
+  defp get_os_from_target(nil), do: nil
+  defp get_os_from_target(target) when is_map(target) do
+    target[:os] || target[:os_family] || target["os"] || target["os_family"]
+  end
+  defp get_os_from_target(_), do: nil
+
+  # Build package params based on package manager specifics
+  defp build_package_params("apt", name, state, op) do
+    params = %{"name" => name, "state" => state}
+    params = if op.params[:update_cache], do: Map.put(params, "update_cache", true), else: params
+    params
+  end
+
+  defp build_package_params("yum", name, state, _op) do
+    %{"name" => name, "state" => state}
+  end
+
+  defp build_package_params("dnf", name, state, _op) do
+    %{"name" => name, "state" => state}
+  end
+
+  defp build_package_params("zypper", name, state, _op) do
+    %{"name" => name, "state" => state}
+  end
+
+  defp build_package_params("apk", name, state, op) do
+    params = %{"name" => name, "state" => state}
+    params = if op.params[:update_cache], do: Map.put(params, "update_cache", true), else: params
+    params
+  end
+
+  defp build_package_params("pacman", name, state, op) do
+    params = %{"name" => name, "state" => state}
+    params = if op.params[:update_cache], do: Map.put(params, "update_cache", true), else: params
+    params
+  end
+
+  defp build_package_params("homebrew", name, state, _op) do
+    %{"name" => name, "state" => state}
+  end
+
+  defp build_package_params("win_chocolatey", name, state, _op) do
+    %{"name" => name, "state" => state}
+  end
+
+  defp build_package_params("pkgng", name, state, _op) do
+    %{"name" => name, "state" => state}
+  end
+
+  defp build_package_params("package", name, state, _op) do
+    # Generic package module - most portable
+    %{"name" => name, "state" => state}
+  end
+
+  defp build_package_params(_manager, name, state, _op) do
+    %{"name" => name, "state" => state}
+  end
+
+  # Task helper functions
 
   defp task_name(op, default) do
     op.metadata[:task_name] || default

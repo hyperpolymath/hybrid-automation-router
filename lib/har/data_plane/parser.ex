@@ -48,6 +48,10 @@ defmodule HAR.DataPlane.Parser do
     HAR.DataPlane.Parsers.Chef.parse(content, opts)
   end
 
+  def parse(:kubernetes, content, opts) do
+    HAR.DataPlane.Parsers.Kubernetes.parse(content, opts)
+  end
+
   def parse(format, _content, _opts) do
     {:error, {:unsupported_format, format}}
   end

@@ -59,6 +59,10 @@ defmodule HAR.DataPlane.Transformer do
     HAR.DataPlane.Transformers.Chef.transform(graph, opts)
   end
 
+  defp do_transform(:kubernetes, graph, opts) do
+    HAR.DataPlane.Transformers.Kubernetes.transform(graph, opts)
+  end
+
   defp do_transform(target, _graph, _opts) do
     {:error, {:unsupported_target, target}}
   end
