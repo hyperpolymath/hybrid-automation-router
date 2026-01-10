@@ -20,22 +20,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v4
 
       - name: Checkout casket-ssg
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v4
         with:
           repository: hyperpolymath/casket-ssg
           path: .casket-ssg
 
       - name: Setup GHCup
-        uses: haskell-actions/setup@ec49483bfc012387b227434aba94f59a6ecd0900 # v2
+        uses: haskell-actions/setup@7786314267139caaaf743fbdb70341b116a8d25d # v2
         with:
           ghc-version: '9.8.2'
           cabal-version: '3.10'
 
       - name: Cache Cabal
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v4
         with:
           path: |
             ~/.cabal/packages
@@ -82,7 +82,7 @@ jobs:
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v3
         with:
           path: '_site'
 
