@@ -24,7 +24,7 @@ defmodule HAR.MixProject do
 
   def application do
     [
-      extra_applications: [:logger, :crypto, :ssl],
+      extra_applications: [:logger, :crypto, :ssl, :runtime_tools],
       mod: {HAR.Application, []}
     ]
   end
@@ -54,6 +54,15 @@ defmodule HAR.MixProject do
       {:x509, "~> 0.8"},
       {:plug_cowboy, "~> 2.6"},
 
+      # Web UI (Phoenix LiveView)
+      {:phoenix, "~> 1.7"},
+      {:phoenix_html, "~> 4.1"},
+      {:phoenix_live_view, "~> 1.0.0-rc.0", override: true},
+      {:phoenix_live_dashboard, "~> 0.8"},
+      {:bandit, "~> 1.0"},
+      {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
+      {:tailwind, "~> 0.2", runtime: Mix.env() == :dev},
+
       # Graph database
       {:libgraph, "~> 0.16"},
 
@@ -67,6 +76,7 @@ defmodule HAR.MixProject do
       {:telemetry_poller, "~> 1.0"},
 
       # Development & testing
+      {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.30", only: :dev, runtime: false},

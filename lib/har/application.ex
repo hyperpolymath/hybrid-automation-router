@@ -21,6 +21,9 @@ defmodule HAR.Application do
       # Telemetry setup
       HAR.Telemetry,
 
+      # PubSub for Phoenix LiveView
+      {Phoenix.PubSub, name: HAR.PubSub},
+
       # IPFS node
       {HAR.IPFS.Node, []},
 
@@ -36,8 +39,8 @@ defmodule HAR.Application do
       # Security manager
       {HAR.Security.Manager, []},
 
-      # Web interface (optional)
-      {HAR.Web.Endpoint, []}
+      # Web interface (Phoenix LiveView)
+      HARWeb.Endpoint
     ]
 
     opts = [strategy: :one_for_one, name: HAR.Supervisor]

@@ -1,0 +1,58 @@
+/* SPDX-License-Identifier: MPL-2.0 */
+/* HAR - Hybrid Automation Router */
+/* Phoenix LiveView Styles */
+
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+/* Animation for spinner */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Phoenix LiveView specific */
+.phx-no-feedback.invalid-feedback,
+.phx-no-feedback .invalid-feedback {
+  display: none;
+}
+
+.phx-click-loading {
+  opacity: 0.5;
+  transition: opacity 0.3s ease-out;
+}
+
+.phx-submit-loading {
+  opacity: 0.5;
+  transition: opacity 0.3s ease-out;
+}
+
+.phx-change-loading {
+  opacity: 0.5;
+  transition: opacity 0.3s ease-out;
+}
+
+/* Code/pre styling */
+pre, code, textarea {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+/* Scrollbar styling for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
