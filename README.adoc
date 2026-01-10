@@ -326,7 +326,7 @@ HAR follows the [Rhodium Standard Repository](https://github.com/yourusername/rh
 
 *Documentation (7/7)*
 - ✅ README.md - Project overview and quickstart
-- ✅ LICENSE - MIT License (maximum accessibility)
+- ✅ LICENSE - Palimpsest-MPL-1.0 License (maximum accessibility)
 - ✅ SECURITY.md - Security policy and vulnerability reporting
 - ✅ CONTRIBUTING.md - Contribution guidelines
 - ✅ CODE_OF_CONDUCT.md - Community standards
@@ -387,7 +387,7 @@ just rsr-check
 
 == License
 
-MIT License - See [LICENSE](./LICENSE) for details.
+Palimpsest-MPL-1.0 License - See [LICENSE](./LICENSE) for details.
 
 *Philosophy:* Maximum accessibility, prevent vendor lock-in.
 
