@@ -22,14 +22,14 @@
 
   (current-position
     (phase "alpha")
-    (overall-completion 35)
+    (overall-completion 40)
     (components
       (semantic-graph 80)
-      (ansible-parser 75)
+      (ansible-parser 85)
       (salt-parser 70)
       (terraform-parser 0)
-      (ansible-transformer 60)
-      (salt-transformer 60)
+      (ansible-transformer 70)
+      (salt-transformer 70)
       (terraform-transformer 0)
       (routing-engine 50)
       (routing-table 70)
@@ -37,24 +37,24 @@
       (security-manager 10)
       (web-endpoint 10)
       (telemetry 60)
-      (ci-cd 95))
+      (ci-cd 100))
     (working-features
       ("Elixir project compiles" "mix compile succeeds with warnings only")
       ("Semantic Graph IR" "Operations, Dependencies, Graph structures")
-      ("Ansible YAML parsing" "Parses playbooks to semantic graph")
+      ("Ansible YAML parsing" "Parses playbooks to semantic graph with correct service types")
       ("Salt SLS parsing" "Parses states to semantic graph")
+      ("YAML output" "YamlFormatter for serializing configs")
       ("Routing table" "GenServer with YAML-based patterns")
       ("Basic routing logic" "Pattern matching to backends")
       ("Telemetry infrastructure" "Metrics and logging")
-      ("CI/CD workflows" "All GitHub Actions SHA-pinned")))
+      ("CI/CD workflows" "All GitHub Actions SHA-pinned")
+      ("Test suite" "61 tests passing (59 unit + 2 doctests)")))
 
   (route-to-mvp
     (milestone "0.2.0 - Parser Completion"
       (items
         ("Add Terraform HCL parser")
-        ("Fix YAML serialization (replace YamlElixir.write_to_string)")
-        ("Add JSON output format")
-        ("Fix remaining 3 test failures")))
+        ("Add JSON output format")))
     (milestone "0.3.0 - Transformer Completion"
       (items
         ("Complete Ansible transformer")
@@ -103,20 +103,16 @@
 
   (blockers-and-issues
     (high
-      ("YamlElixir.write_to_string undefined" "Need YAML serialization library or Jason fallback")
       ("Terraform parser not implemented" "Required for complete IaC coverage"))
     (medium
-      ("3 test failures" "Test assertions need adjustment")
-      ("Logger.warn deprecated" "Should use Logger.warning")
       ("Unused variable warnings" "Code cleanup needed"))
     (low
       ("Tesla deprecation warning" "ex_ipfs uses deprecated Tesla.Builder")))
 
   (critical-next-actions
     (immediate
-      ("Fix YAML serialization - add yamerl writer or use Jason")
-      ("Fix 3 remaining test failures")
-      ("Create Terraform parser stub"))
+      ("Create Terraform parser stub")
+      ("Add JSON output format option"))
     (this-week
       ("Complete Ansible transformer")
       ("Add CLI mix tasks")
@@ -134,5 +130,8 @@
         ("Extracted RoutingPlan/RoutingDecision structs")
         ("Fixed duplicate supervisor startup")
         ("Fixed UUID module reference")
-        ("Fixed doctest in graph.ex")
-        ("Tests: 59 total, 56 passing, 3 failing")))))
+        ("Fixed doctest in graph.ex and operation.ex")
+        ("Fixed Ansible parser service type mapping (service_start, service_stop)")
+        ("Created YamlFormatter module (yaml_elixir only reads, doesn't write)")
+        ("Fixed all Logger.warn deprecation warnings")
+        ("Tests: 59 tests + 2 doctests, all passing")))))
