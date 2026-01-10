@@ -2,7 +2,7 @@ defmodule HAR.DataPlane.Parsers.AnsibleTest do
   use ExUnit.Case
 
   alias HAR.DataPlane.Parsers.Ansible
-  alias HAR.Semantic.{Graph, Operation}
+  alias HAR.Semantic.Graph
 
   describe "parse/2" do
     test "parses simple playbook with single task" do

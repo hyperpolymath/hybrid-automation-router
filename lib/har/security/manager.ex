@@ -31,7 +31,7 @@ defmodule HAR.Security.Manager do
   @doc """
   Authenticate a device or user by certificate.
   """
-  def authenticate(cert) do
+  def authenticate(_cert) do
     # TODO: Implement certificate validation
     {:ok, %{authenticated: true, device_id: "mock_device"}}
   end
@@ -39,7 +39,7 @@ defmodule HAR.Security.Manager do
   @doc """
   Authorize an operation for a user/device.
   """
-  def authorize(identity, operation) do
+  def authorize(_identity, _operation) do
     # TODO: Implement policy-based authorization
     :ok
   end

@@ -15,11 +15,11 @@ defmodule HAR.ControlPlane.Supervisor do
   def init(_opts) do
     children = [
       # Routing table (loads patterns from YAML)
-      {HAR.ControlPlane.RoutingTable, []}
-
-      # TODO: Add other control plane components
-      # {HAR.ControlPlane.PolicyEngine, []},
-      # {HAR.ControlPlane.HealthChecker, []}
+      {HAR.ControlPlane.RoutingTable, []},
+      # Health checker for backend monitoring
+      {HAR.ControlPlane.HealthChecker, []},
+      # Policy engine for access control
+      {HAR.ControlPlane.PolicyEngine, []}
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

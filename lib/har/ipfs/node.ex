@@ -39,7 +39,7 @@ defmodule HAR.IPFS.Node do
   @doc """
   Retrieve configuration from IPFS by CID.
   """
-  def retrieve(cid) do
+  def retrieve(_cid) do
     # TODO: Implement IPFS retrieval
     {:error, :not_implemented}
   end

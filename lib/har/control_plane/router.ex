@@ -7,8 +7,8 @@ defmodule HAR.ControlPlane.Router do
   and routing policies.
   """
 
-  alias HAR.Semantic.{Graph, Operation}
-  alias HAR.ControlPlane.{RoutingTable, RoutingDecision, RoutingPlan}
+  alias HAR.Semantic.Graph
+  alias HAR.ControlPlane.{RoutingTable, RoutingDecision, RoutingPlan, HealthChecker, PolicyEngine}
 
   require Logger
 
@@ -96,17 +96,15 @@ defmodule HAR.ControlPlane.Router do
   end
 
   defp filter_healthy(backends) do
-    # TODO: Integrate with HealthChecker
-    # For now, assume all backends are healthy
-    backends
+    # Use HealthChecker to filter out unhealthy backends
+    HealthChecker.filter_healthy(backends)
   end
 
-  defp apply_policies(backends, _operation, opts) do
-    # TODO: Integrate with PolicyEngine
-    # For now, return backends as-is
+  defp apply_policies(backends, operation, opts) do
+    # Use PolicyEngine to apply routing policies
     policies = Keyword.get(opts, :policies, [])
     Logger.debug("Applying policies: #{inspect(policies)}")
-    backends
+    PolicyEngine.apply_policies(backends, operation, opts)
   end
 
   defp select_backend([], _opts), do: {:error, :no_backend_available}
@@ -116,9 +114,9 @@ defmodule HAR.ControlPlane.Router do
     {:ok, backend}
   end
 
-  defp validate_consistency(decisions) do
-    # Check for conflicts (e.g., same resource routed to different backends)
-    # For now, simple validation
+  defp validate_consistency(_decisions) do
+    # TODO: Check for conflicts (e.g., same resource routed to different backends)
+    # For now, simple validation - returns :ok
     :ok
   end
 end

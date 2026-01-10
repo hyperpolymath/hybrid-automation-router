@@ -242,7 +242,7 @@ defmodule HAR.DataPlane.Transformers.Ansible do
     maybe_add_when(task, op)
   end
 
-  defp operation_to_task(%Operation{type: type} = op) do
+  defp operation_to_task(%Operation{type: type} = _op) do
     Logger.warning("Unsupported operation type for Ansible: #{type}")
 
     # Generate comment task
