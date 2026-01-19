@@ -57,7 +57,7 @@ defmodule HAR.MixProject do
       # Web UI (Phoenix LiveView)
       {:phoenix, "~> 1.7"},
       {:phoenix_html, "~> 4.1"},
-      {:phoenix_live_view, "~> 1.0.0-rc.0", override: true},
+      {:phoenix_live_view, "~> 1.1.20", override: true},
       {:phoenix_live_dashboard, "~> 0.8"},
       {:bandit, "~> 1.0"},
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
