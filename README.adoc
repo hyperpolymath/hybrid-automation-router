@@ -1,8 +1,7 @@
 = HAR - Hybrid Automation Router
 
-image:[License,link="https://github.com/hyperpolymath/palimpsest-license"]
-
-// SPDX-License-Identifier: PMPL-1.0
+image:https://img.shields.io/badge/License-PMPL--1.0-blue.svg[License: PMPL-1.0,link="https://github.com/hyperpolymath/palimpsest-license"]
+// SPDX-License-Identifier: PMPL-1.0-or-later
 // SPDX-FileCopyrightText: 2025 Jonathan D.A. Jewell
 
 
@@ -418,3 +417,14 @@ If you use HAR in research, please cite:
 *Status:* Early development | *License:* MIT | *Language:* Elixir
 
 *Star this repo if you believe infrastructure automation should be tool-agnostic!* ⭐
+
+== OPSM Link
+
+[source]
+----
+OPSM Core
+  |
+  v
+hybrid-automation-router (automation routing for OPSM operations)
+
+----

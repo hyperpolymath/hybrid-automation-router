@@ -1,4 +1,4 @@
-;; SPDX-License-Identifier: MPL-2.0
+;; SPDX-License-Identifier: PMPL-1.0-or-later
 ;; ECOSYSTEM.scm - Ecosystem positioning
 
 (ecosystem
@@ -10,4 +10,9 @@
    (related-projects
      ((palimpsest-license . "license-framework")))
    (what-this-is . ("Hyperpolymath project"))
-   (what-this-is-not . ())))
+   (what-this-is-not . ()))
+  (opsm-integration
+    (relationship "core")
+    (description "automation routing for OPSM operations.")
+    (direction "opsm -> hybrid-automation-router"))
+)

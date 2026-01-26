@@ -1,17 +1,15 @@
-;; SPDX-License-Identifier: AGPL-3.0-or-later
-;; META.scm - Meta-level information for hybrid-automation-router
-;; Media-Type: application/meta+scheme
+;; SPDX-License-Identifier: PMPL-1.0-or-later
+;; META.scm - Project metadata
 
-(meta
-  (architecture-decisions ())
+(define project-meta
+  `((version . "1.0.0")
+    (architecture-decisions . ())
+    (development-practices
+      ((code-style . "standard")
+       (security . "openssf-scorecard")
+       (versioning . "semver")
+       (documentation . "asciidoc")
+       (branching . "trunk-based")))
+    (design-rationale . ())))
 
-  (development-practices
-    (code-style ())
-    (security
-      (principle "Defense in depth"))
-    (testing ())
-    (versioning "SemVer")
-    (documentation "AsciiDoc")
-    (branching "main for stable"))
-
-  (design-rationale ()))
+(define opsm-link "OPSM link: automation routing for OPSM operations.")

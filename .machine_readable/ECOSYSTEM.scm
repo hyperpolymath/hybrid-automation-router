@@ -1,20 +1,18 @@
-;; SPDX-License-Identifier: AGPL-3.0-or-later
-;; ECOSYSTEM.scm - Ecosystem position for hybrid-automation-router
-;; Media-Type: application/vnd.ecosystem+scm
+;; SPDX-License-Identifier: PMPL-1.0-or-later
+;; ECOSYSTEM.scm - Ecosystem positioning
 
 (ecosystem
-  (version "1.0")
-  (name "hybrid-automation-router")
-  (type "")
-  (purpose "")
-
-  (position-in-ecosystem
-    (category "")
-    (subcategory "")
-    (unique-value ()))
-
-  (related-projects ())
-
-  (what-this-is ())
-
-  (what-this-is-not ()))
+  ((version . "1.0.0")
+   (name . "hybrid-automation-router")
+   (type . "application")
+   (purpose . "Hyperpolymath project")
+   (position-in-ecosystem . "supporting")
+   (related-projects
+     ((palimpsest-license . "license-framework")))
+   (what-this-is . ("Hyperpolymath project"))
+   (what-this-is-not . ()))
+  (opsm-integration
+    (relationship "core")
+    (description "automation routing for OPSM operations.")
+    (direction "opsm -> hybrid-automation-router"))
+)
