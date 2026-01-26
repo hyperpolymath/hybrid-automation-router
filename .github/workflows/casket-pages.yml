@@ -20,22 +20,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
 
       - name: Checkout casket-ssg
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
         with:
           repository: hyperpolymath/casket-ssg
           path: .casket-ssg
 
       - name: Setup GHCup
-        uses: haskell-actions/setup@7786314267139caaaf743fbdb70341b116a8d25d # v2
+        uses: haskell-actions/setup@f9150cb1d140e9a9271700670baa38991e6fa25c # v2
         with:
           ghc-version: '9.8.2'
           cabal-version: '3.10'
 
       - name: Cache Cabal
-        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v4
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v4
         with:
           path: |
             ~/.cabal/packages

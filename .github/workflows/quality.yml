@@ -6,14 +6,14 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Check file permissions
         run: |
           find . -type f -perm /111 -name "*.sh" | head -10 || true
 
       - name: Check for secrets
-        uses: trufflesecurity/trufflehog@4e02afb0159d0de9be6ceaa2064177f1b16f5033 # main
+        uses: trufflesecurity/trufflehog@5e900a52f9514842f3fd2a62ccfe8fc197694e06 # main
         with:
           path: ./
           base: ${{ github.event.pull_request.base.sha || github.event.before }}
@@ -30,13 +30,13 @@ jobs:
           find . -type f -size +1M -not -path "./.git/*" | head -10 || echo "No large files"
 
       - name: EditorConfig check
-        uses: editorconfig-checker/action-editorconfig-checker@8d9ca9cf96953707b7299eaec419c6cfcd3a65ac # main
+        uses: editorconfig-checker/action-editorconfig-checker@6245a824737d548cb0eb2b678a81afeaf780ce1e # main
         continue-on-error: true
 
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Check documentation
         run: |
           MISSING=""
