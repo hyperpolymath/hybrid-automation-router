@@ -1,0 +1,99 @@
+{
+  "$schema": "panll-panel/v1",
+  "panel_id": "har-dashboard",
+  "name": "HAR Overview Dashboard",
+  "description": "Main dashboard panel for Hybrid Automation Router — shows all targets, routing decisions, and system health",
+  "version": "0.1.0",
+  "category": "dashboard",
+  "layout": {
+    "type": "grid",
+    "columns": 4,
+    "rows": 5,
+    "gap": "8px"
+  },
+  "widgets": [
+    {
+      "id": "system-health",
+      "type": "status-indicator",
+      "position": { "col": 1, "row": 1, "span_cols": 1 },
+      "label": "System Health",
+      "data_source": "har://system/health",
+      "states": {
+        "healthy": { "color": "#22c55e", "icon": "check-circle" },
+        "degraded": { "color": "#f59e0b", "icon": "alert-triangle" },
+        "unhealthy": { "color": "#ef4444", "icon": "x-circle" }
+      }
+    },
+    {
+      "id": "total-targets",
+      "type": "counter",
+      "position": { "col": 2, "row": 1, "span_cols": 1 },
+      "label": "Total Targets",
+      "data_source": "har://targets/count"
+    },
+    {
+      "id": "events-per-minute",
+      "type": "sparkline",
+      "position": { "col": 3, "row": 1, "span_cols": 1 },
+      "label": "Events/min",
+      "data_source": "har://metrics/events_per_minute",
+      "time_range": "1h"
+    },
+    {
+      "id": "routing-success-rate",
+      "type": "gauge",
+      "position": { "col": 4, "row": 1, "span_cols": 1 },
+      "label": "Route Success",
+      "data_source": "har://metrics/routing_success_rate",
+      "min": 0.0,
+      "max": 1.0,
+      "format": "percentage",
+      "thresholds": { "warning": 0.9, "critical": 0.7 }
+    },
+    {
+      "id": "target-grid",
+      "type": "card-grid",
+      "position": { "col": 1, "row": 2, "span_cols": 4, "span_rows": 2 },
+      "label": "Automation Targets",
+      "data_source": "har://targets/all",
+      "card_template": {
+        "title": "{{name}}",
+        "subtitle": "{{id}}",
+        "status": "{{status}}",
+        "metrics": [
+          { "label": "Events", "value": "{{events_routed}}" },
+          { "label": "Capabilities", "value": "{{capabilities_count}}" }
+        ]
+      }
+    },
+    {
+      "id": "strategy-breakdown",
+      "type": "pie-chart",
+      "position": { "col": 1, "row": 4, "span_cols": 2 },
+      "label": "Routing Strategy Usage",
+      "data_source": "har://metrics/strategy_breakdown",
+      "legend_position": "right"
+    },
+    {
+      "id": "route-log",
+      "type": "event-log",
+      "position": { "col": 3, "row": 4, "span_cols": 2, "span_rows": 2 },
+      "label": "Recent Route Decisions",
+      "data_source": "har://routes/recent",
+      "max_entries": 30,
+      "show_timestamp": true,
+      "show_confidence": true,
+      "show_strategy": true
+    },
+    {
+      "id": "category-distribution",
+      "type": "bar-chart",
+      "position": { "col": 1, "row": 5, "span_cols": 2 },
+      "label": "Event Categories",
+      "data_source": "har://metrics/category_distribution",
+      "orientation": "horizontal"
+    }
+  ],
+  "refresh_interval_ms": 3000,
+  "permissions": ["read:system", "read:targets", "read:routes", "read:metrics"]
+}
