@@ -9,7 +9,7 @@ status = "active"
 
 [project-context]
 name = "hybrid-automation-router"
-completion-percentage = 15
+completion-percentage = 25
 phase = "Phase 1 — Core Framework (In Progress)"
 description = "Intelligent event routing for automation targets"
 
@@ -30,8 +30,8 @@ ephapax-linear-types = "done"
 priority-1 = "Implement proven-queueconn runtime integration for rpa-elysium dispatch"
 priority-2 = "Wire health checks between HAR and rpa-elysium"
 priority-3 = "Add Gleam backend service for event persistence"
-priority-4 = "Add Gleam backend service for event persistence"
-priority-5 = "Wire health checks between HAR and rpa-elysium"
+priority-4 = "Generate C headers from Idris2 ABI definitions"
+priority-5 = "Implement routing rule evaluation in Zig FFI"
 
 [session-history]
 # 2026-03-17: Initial creation from rsr-template-repo — Rust workspace, 3 crates, PanLL panels, README

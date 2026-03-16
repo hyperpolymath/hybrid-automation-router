@@ -38,13 +38,35 @@ Maps router lifecycle to formally verified state machine:
 
 Manages connections to downstream automation targets (rpa-elysium, etc.):
 
-| proven-queueconn Type | HAR Meaning |
-|------------------------|-------------|
-| `QueueState.Disconnected` | No connection to target |
-| `QueueState.Connected` | Connected, ready to dispatch |
-| `QueueState.Producing` | Actively dispatching events |
-| `QueueState.Failed` | Connection to target lost |
-| `DeliveryGuarantee.AtLeastOnce` | Default for rpa-elysium |
+| proven-queueconn Type | HAR Meaning | Tag |
+|------------------------|-------------|-----|
+| `QueueState.Disconnected` | No connection to target | 0 |
+| `QueueState.Connected` | Connected, ready to dispatch | 1 |
+| `QueueState.Consuming` | Receiving events from source | 2 |
+| `QueueState.Producing` | Actively dispatching events | 3 |
+| `QueueState.Failed` | Connection to target lost | 4 |
+| `DeliveryGuarantee.AtMostOnce` | Fire-and-forget (low priority) | 0 |
+| `DeliveryGuarantee.AtLeastOnce` | Default for rpa-elysium | 1 |
+| `DeliveryGuarantee.ExactlyOnce` | Idempotent targets | 2 |
+| `MessageState.Pending` | Event enqueued, awaiting dispatch | 0 |
+| `MessageState.Delivered` | Sent to target, awaiting ack | 1 |
+| `MessageState.Acknowledged` | Target confirmed processing | 2 |
+| `MessageState.Rejected` | Target rejected the event | 3 |
+| `MessageState.DeadLettered` | Exceeded retry limit | 4 |
+| `MessageState.Expired` | TTL elapsed | 5 |
+| `QueueOp.Publish` | HAR sends event to target | 0 |
+| `QueueOp.Subscribe` | HAR receives from source | 1 |
+| `QueueOp.Acknowledge` | HAR acks received event | 2 |
+| `QueueOp.Reject` | HAR rejects received event | 3 |
+| `QueueOp.Peek` | Inspect without consuming | 4 |
+| `QueueOp.Purge` | Clear target outbound queue | 5 |
+| `QueueError.ConnectionLost` | Connection to target lost | 0 |
+| `QueueError.QueueNotFound` | Target queue does not exist | 1 |
+| `QueueError.MessageTooLarge` | Event exceeds max size | 2 |
+| `QueueError.QuotaExceeded` | Queue quota exceeded | 3 |
+| `QueueError.AckTimeout` | Ack not received in time | 4 |
+| `QueueError.Unauthorized` | Permission denied | 5 |
+| `QueueError.SerializationError` | Payload (de)serialization failed | 6 |
 
 ## Ephapax Linear Types
 
@@ -57,6 +79,33 @@ Supplementary linear type definitions enforce ownership semantics:
 | `TargetConnection linear` | Every connection explicitly disconnected (no leaks) |
 
 **Note:** When Idris2 and Ephapax conflict, Idris2 definitions are authoritative.
+
+### Valid Router Transitions
+
+```
+Configuring ──→ Routing       (StartRouting: all targets discovered)
+Routing     ──→ Shutdown      (InitiateShutdown: graceful stop)
+Routing     ──→ Failed        (RoutingFault: unrecoverable error)
+Configuring ──→ Failed        (ConfigFault: configuration error)
+Failed      ──→ Configuring   (ResetRouter: reset and reconfigure)
+```
+
+### Zig FFI Exports
+
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `har_abi_version` | `() -> u32` | ABI version (currently 1) |
+| `har_router_create` | `() -> c_int` | Create router, returns slot or -1 |
+| `har_router_destroy` | `(c_int) -> void` | Destroy router |
+| `har_router_state` | `(c_int) -> u8` | Get MachineState tag |
+| `har_router_start` | `(c_int) -> u8` | Initial->Running |
+| `har_router_shutdown` | `(c_int) -> u8` | Running->Terminal |
+| `har_dispatch_event` | `(c_int, u32) -> u8` | Dispatch event |
+| `har_target_connect` | `(u8) -> c_int` | Connect to target |
+| `har_target_disconnect` | `(c_int) -> void` | Disconnect target |
+| `har_target_state` | `(c_int) -> u8` | Get QueueState tag |
+| `har_last_error` | `(c_int) -> u8` | Get last error tag |
+| `har_version` | `() -> [*:0]const u8` | Version string |
 
 ## Directory Structure
 
