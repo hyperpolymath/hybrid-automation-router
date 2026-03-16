@@ -26,7 +26,7 @@ toc::[]
 |⚙ *IN PROGRESS*
 |===
 
-The repository contains a Rust workspace with 3 crates (`har-core`, `har-router`, `har-cli`), ABI/FFI scaffolding (Idris2 + Zig), proven-servers bindings, Ephapax linear types, and PanLL monitoring panels.
+The repository contains a Rust workspace with 8 crates (`har-core`, `har-config`, `har-dispatch`, `har-health`, `har-metrics`, `har-router`, `har-cli`, plus the Gleam backend service), ABI/FFI scaffolding (Idris2 + Zig), proven-servers bindings, Ephapax linear types, and PanLL monitoring panels.
 
 ---
 
@@ -150,7 +150,30 @@ Build the routing engine in Rust that dispatches automation events from sources 
 |✓ Scaffold
 |===
 
-==== 1.4 Remaining Work
+==== 1.4 Configuration & Dispatch ✓
+
+[%autowidth]
+|===
+|Task |Technology |Status
+
+|`har-config`
+|Rust — Configuration loading and validation
+|✓ Done
+
+|`har-dispatch`
+|Rust — Event dispatch with retry and dead-letter queues
+|✓ Done
+
+|`har-health`
+|Rust — Health checking with degradation tracking
+|✓ Done
+
+|`har-metrics`
+|Rust — Metrics collection with snapshots
+|✓ Done
+|===
+
+==== 1.5 Remaining Work
 
 [%autowidth]
 |===
@@ -158,10 +181,6 @@ Build the routing engine in Rust that dispatches automation events from sources 
 
 |queueconn runtime
 |Live dispatch to target queues via proven-queueconn
-|☐ Pending
-
-|Health checks
-|Router and target health monitoring endpoints
 |☐ Pending
 
 |Gleam backend
@@ -174,8 +193,11 @@ Build the routing engine in Rust that dispatches automation events from sources 
 * [x] Router can dispatch events to at least one target
 * [x] CLI can list, add, and remove routes
 * [x] ABI definitions compile with Idris2
+* [x] Health check endpoints respond correctly
+* [x] Metrics collection with snapshots
+* [x] Configuration loading and validation
+* [x] Dispatch with retry and dead-letter handling
 * [ ] queueconn runtime dispatches to live targets
-* [ ] Health check endpoints respond correctly
 * [ ] Gleam backend handles job queue persistence
 
 ---
@@ -391,4 +413,4 @@ This roadmap and the Hybrid Automation Router project are licensed under PMPL-1.
 
 ---
 
-_Last updated: 2026-03-16_
+_Last updated: 2026-03-17_

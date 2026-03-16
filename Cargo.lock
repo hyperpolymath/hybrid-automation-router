@@ -242,7 +242,7 @@ dependencies = [
 
 [[package]]
 name = "har-cli"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -256,7 +256,7 @@ dependencies = [
 
 [[package]]
 name = "har-config"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "har-core",
@@ -269,7 +269,7 @@ dependencies = [
 
 [[package]]
 name = "har-core"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -282,7 +282,7 @@ dependencies = [
 
 [[package]]
 name = "har-dispatch"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -297,7 +297,7 @@ dependencies = [
 
 [[package]]
 name = "har-health"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "async-trait",
  "chrono",
@@ -311,7 +311,7 @@ dependencies = [
 
 [[package]]
 name = "har-metrics"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "har-core",
@@ -322,7 +322,7 @@ dependencies = [
 
 [[package]]
 name = "har-router"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "async-trait",

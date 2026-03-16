@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: PMPL-1.0-or-later -->
 <!-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk> -->
 <!-- TOPOLOGY.md — Project architecture map and completion dashboard -->
-<!-- Last updated: 2026-03-16 -->
+<!-- Last updated: 2026-03-17 -->
 
 # Hybrid Automation Router — Project Topology
 
@@ -69,6 +69,10 @@ COMPONENT                          STATUS              NOTES
 ─────────────────────────────────  ──────────────────  ─────────────────────────────────
 RUST WORKSPACE
   har-core                          ██████████ 100%    Types, traits, error handling
+  har-config                        ██████████ 100%    Configuration loading & validation
+  har-dispatch                      ██████████ 100%    Event dispatch, retry, dead-letter
+  har-health                        ██████████ 100%    Health checking, degradation
+  har-metrics                       ██████████ 100%    Metrics collection, snapshots
   har-router                        █████████░  90%    Routing engine, strategy chain
   har-cli                           ████████░░  80%    CLI, route management
 
@@ -84,7 +88,7 @@ ECOSYSTEM INTEGRATION
 
 PLATFORM (PLANNED)
   Advanced Routing (Phase 2)        █░░░░░░░░░  10%    ML scoring, circuit breakers
-  Observability (Phase 3)           █░░░░░░░░░  10%    Metrics, tracing, alerting
+  Observability (Phase 3)           ██░░░░░░░░  20%    Metrics crate started
   Target Ecosystem (Phase 4)        █░░░░░░░░░  10%    Web, API, doc, desktop targets
   Enterprise (Phase 5)              ░░░░░░░░░░   0%    Multi-tenancy, SSO, SLA
 
@@ -99,7 +103,7 @@ REPO INFRASTRUCTURE
   Language Policy                   ██████████ 100%    Hyperpolymath Standard verified
 
 ─────────────────────────────────────────────────────────────────────────────
-OVERALL:                            ██░░░░░░░░  ~25%   Phase 1 In Progress
+OVERALL:                            █████░░░░░  ~50%   Phase 1 Near Complete (v0.2.0)
 ```
 
 ## Key Dependencies

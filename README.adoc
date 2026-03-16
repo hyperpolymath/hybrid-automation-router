@@ -21,7 +21,7 @@ toc::[]
 
 == Overview
 
-The Hybrid Automation Router (HAR) is an intelligent routing layer that receives automation events from multiple sources (filesystem watchers, webhooks, queues, schedules) and routes them to the best automation target based on capabilities, tags, priorities, and configurable strategies.
+The Hybrid Automation Router (HAR) is an intelligent routing layer that receives automation events from multiple sources (filesystem watchers, webhooks, queues, schedules) and routes them to the best automation target based on capabilities, tags, priorities, and configurable strategies. The v0.2.0 workspace provides 8 crates covering core routing, configuration management, event dispatch with retry and dead-letter handling, health checking with degradation tracking, and metrics collection with snapshots.
 
 HAR is designed for **tight integration** with {url-rpa-elysium}[RPA Elysium] while remaining fully independent — either can be used standalone.
 
@@ -79,7 +79,7 @@ har route filesystem --target rpa-elysium
 |===
 |Layer |Technology
 
-|*Core Engine* |Rust (har-core, har-router, har-cli)
+|*Core Engine* |Rust (8 crates: har-core, har-config, har-dispatch, har-health, har-metrics, har-router, har-cli)
 |*Backend* |Gleam (BEAM — event bus, persistence)
 |*ABI* |Idris2 (formal proofs, shared with rpa-elysium)
 |*FFI* |Zig (C-compatible implementation)
@@ -115,8 +115,12 @@ har route web --target web-auto
 |Crate |Purpose
 
 |`har-core` |Core types: events, targets, routes, strategies
+|`har-config` |Configuration loading and validation (JSON, file-based)
+|`har-dispatch` |Event dispatch to automation targets with retry and dead-letter queues
+|`har-health` |Health checking for targets with degradation tracking
+|`har-metrics` |Metrics collection for routing decisions with snapshots
 |`har-router` |Routing engine with pluggable strategies
-|`har-cli` |Command-line interface
+|`har-cli` |Command-line interface for route management
 |===
 
 == Routing Strategies

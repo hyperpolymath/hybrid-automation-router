@@ -3,19 +3,19 @@
 
 [metadata]
 project = "hybrid-automation-router"
-version = "0.1.0"
+version = "0.2.0"
 last-updated = "2026-03-17"
 status = "active"
 
 [project-context]
 name = "hybrid-automation-router"
-completion-percentage = 25
-phase = "Phase 1 — Core Framework (In Progress)"
+completion-percentage = 50
+phase = "Phase 1 — Core Framework (Near Complete)"
 description = "Intelligent event routing for automation targets"
 
 [current-position]
-milestone = "Phase 1.0 — Initial scaffold"
-focus = "Core types, routing engine, CLI, PanLL panels"
+milestone = "Phase 1.4 — Configuration, dispatch, health, metrics"
+focus = "8-crate workspace with dispatch, health checking, and metrics"
 rust-workspace = "done"
 core-types = "done"
 routing-engine = "done"
@@ -25,14 +25,20 @@ abi-ffi-scaffold = "done"
 proven-fsm-bindings = "done"
 proven-queueconn-bindings = "done"
 ephapax-linear-types = "done"
+har-config = "done"
+har-dispatch = "done"
+har-health = "done"
+har-metrics = "done"
 
 [next-actions]
-priority-1 = "Implement proven-queueconn runtime integration for rpa-elysium dispatch"
-priority-2 = "Wire health checks between HAR and rpa-elysium"
-priority-3 = "Add Gleam backend service for event persistence"
-priority-4 = "Generate C headers from Idris2 ABI definitions"
-priority-5 = "Implement routing rule evaluation in Zig FFI"
+priority-1 = "Implement proven-queueconn runtime integration for live target dispatch"
+priority-2 = "Add Gleam backend service for event persistence on BEAM"
+priority-3 = "Generate C headers from Idris2 ABI definitions"
+priority-4 = "Implement routing rule evaluation in Zig FFI"
+priority-5 = "Phase 2: ML-based route scoring and adaptive load balancing"
+priority-6 = "Phase 2: Circuit breakers with exponential backoff"
 
 [session-history]
 # 2026-03-17: Initial creation from rsr-template-repo — Rust workspace, 3 crates, PanLL panels, README
 # 2026-03-17: proven-fsm + proven-queueconn ABI bindings, Zig FFI (7 tests), Ephapax linear types, ABI-FFI-README
+# 2026-03-17: v0.2.0 — Added har-config, har-dispatch, har-health, har-metrics crates (8 total). Dispatch with retry/dead-letter, health checking with degradation, metrics with snapshots. Updated all documentation.

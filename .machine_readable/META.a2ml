@@ -5,8 +5,8 @@
 # Architecture decisions, design rationale, governance.
 
 [metadata]
-version = "0.1.0"
-last-updated = "2026-03-16"
+version = "0.2.0"
+last-updated = "2026-03-17"
 
 [project-info]
 type = "binary"  # Rust workspace producing har-cli binary + har-core/har-router libraries
@@ -29,6 +29,12 @@ ADR-004 = { title = "Ephapax linear types for ownership safety", status = "accep
 ADR-005 = { title = "rpa-elysium as first-class integration target", status = "accepted", date = "2026-03-16", rationale = "RPA Elysium is the primary consumer of routed events. HAR's target interface is designed around rpa-elysium's bot framework API, with panels/ providing dedicated monitoring." }
 
 ADR-006 = { title = "PanLL panels for monitoring and dashboards", status = "accepted", date = "2026-03-16", rationale = "PanLL's panel-based architecture provides live data sources for route health, dispatch latency, and target status without building a custom dashboard." }
+
+ADR-007 = { title = "Dispatch with retry and dead-letter queues", status = "accepted", date = "2026-03-17", rationale = "har-dispatch implements configurable retry policies (fixed, linear, exponential backoff) with a dead-letter queue for permanently failed events. Decouples dispatch failure handling from routing logic, ensuring no event is silently lost." }
+
+ADR-008 = { title = "Health checking with degradation tracking", status = "accepted", date = "2026-03-17", rationale = "har-health provides periodic health probes for automation targets with a degradation model (healthy, degraded, unhealthy, unknown). Enables the router to make informed dispatch decisions and supports graceful degradation rather than hard failure." }
+
+ADR-009 = { title = "Metrics collection with snapshots", status = "accepted", date = "2026-03-17", rationale = "har-metrics collects routing decision metrics (dispatch counts, latency histograms, error rates) with point-in-time snapshots. Provides the data foundation for Phase 3 observability (Prometheus export, PanLL data sources) without coupling to a specific metrics backend." }
 
 [development-practices]
 build-tool = "just"
