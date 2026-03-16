@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Clade declaration — part of the gv-clade-index registry
+# See: https://github.com/hyperpolymath/gv-clade-index
+
+[identity]
+uuid = "8c1c4b84-1603-5303-bbd4-9f1f047f2dd2"
+primary-forge = "github"
+primary-owner = "hyperpolymath"
+canonical-name = "hybrid-automation-router"
+prefixed-name = "ix-hybrid-automation-router"
+
+[clade]
+primary = "ix"
+secondary = ["ax"]
+assigned = "2026-03-16"
+rationale = ""
+
+[forges]
+github = "hyperpolymath/hybrid-automation-router"
+gitlab = "hyperpolymath/hybrid-automation-router"
+bitbucket = "hyperpolymath/hybrid-automation-router"
+
+[lineage]
+type = "standalone"
+parent = "Hybrid automation routing"
+born = "2026-03-16"
