@@ -1,22 +1,394 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
-= YOUR Template Repo Roadmap
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+
+= Hybrid Automation Router Development Roadmap
+:toc: macro
+:toclevels: 3
+:icons: font
+:source-highlighter: rouge
+
+A phased development plan for building the Hybrid Automation Router (HAR), a pluggable routing engine that dispatches automation events to targets such as RPA Elysium.
+
+toc::[]
 
 == Current Status
 
-Initial development phase.
+[cols="1,3,1"]
+|===
+|Phase |Description |Status
 
-== Milestones
+|*Phase 0*
+|Foundation & Infrastructure
+|✓ *COMPLETE*
 
-=== v0.1.0 - Foundation
-* [ ] Core functionality
-* [ ] Basic documentation
-* [ ] CI/CD pipeline
+|*Phase 1*
+|Core Framework
+|⚙ *IN PROGRESS*
+|===
 
-=== v1.0.0 - Stable Release
-* [ ] Full feature set
-* [ ] Comprehensive tests
-* [ ] Production ready
+The repository contains a Rust workspace with 3 crates (`har-core`, `har-router`, `har-cli`), ABI/FFI scaffolding (Idris2 + Zig), proven-servers bindings, Ephapax linear types, and PanLL monitoring panels.
 
-== Future Directions
+---
 
-_To be determined based on community feedback._
+== Phase 0: Foundation & Infrastructure ✓
+
+*Status*: Complete
+
+=== Deliverables
+
+[%autowidth]
+|===
+|Component |Description |Status
+
+|Repository Structure
+|RSR-compliant layout with documentation
+|✓ Done
+
+|CI/CD Pipelines
+|GitHub Actions workflows for quality, security, mirroring
+|✓ Done
+
+|Multi-Forge Distribution
+|Automatic sync to GitHub, GitLab, Bitbucket
+|✓ Done
+
+|Language Policy
+|Hyperpolymath Standard (CLAUDE.md)
+|✓ Done
+
+|Security Workflows
+|CodeQL, Scorecard, TruffleHog secret detection
+|✓ Done
+
+|Policy Enforcement
+|npm/bun blocker, Guix/Nix policy, RSR compliance
+|✓ Done
+
+|Licensing
+|PMPL-1.0-or-later (MPL-2.0 fallback)
+|✓ Done
+
+|Governance
+|SECURITY.md, CONTRIBUTING, CODE_OF_CONDUCT, issue templates
+|✓ Done
+|===
+
+---
+
+== Phase 1: Core Framework
+
+*Status*: In Progress
+
+=== Objective
+
+Build the routing engine in Rust that dispatches automation events from sources to targets, with pluggable routing strategies and proven-servers integration.
+
+=== Deliverables
+
+==== 1.1 Rust Workspace ✓
+
+[%autowidth]
+|===
+|Task |Technology |Status
+
+|`har-core`
+|Rust — Core types, traits, error handling
+|✓ Done
+
+|`har-router`
+|Rust — Routing engine with pluggable strategies
+|✓ Done
+
+|`har-cli`
+|Rust + Clap — CLI for route management
+|✓ Done
+
+|Build automation
+|Justfile + Cargo workspace
+|✓ Done
+
+|Guix packaging
+|guix.scm for reproducible builds
+|✓ Done
+|===
+
+==== 1.2 ABI/FFI Scaffold ✓
+
+[%autowidth]
+|===
+|Component |Technology |Status
+
+|Idris2 ABI definitions
+|`src/abi/ProvenFSM.idr`, `ProvenQueue.idr`
+|✓ Done
+
+|Zig FFI implementation
+|`ffi/zig/`
+|✓ Done
+
+|Ephapax linear types
+|`src/abi/LinearRouting.eph`
+|✓ Done
+|===
+
+==== 1.3 Ecosystem Integration ✓
+
+[%autowidth]
+|===
+|Component |Description |Status
+
+|proven-servers bindings
+|FSM lifecycle and queueconn dispatch
+|✓ Done
+
+|PanLL panels
+|`panels/har-dashboard`, `panels/rpa-elysium`
+|✓ Done
+
+|Gleam backend service
+|`services/src/` — backend scaffold
+|✓ Scaffold
+|===
+
+==== 1.4 Remaining Work
+
+[%autowidth]
+|===
+|Task |Description |Status
+
+|queueconn runtime
+|Live dispatch to target queues via proven-queueconn
+|☐ Pending
+
+|Health checks
+|Router and target health monitoring endpoints
+|☐ Pending
+
+|Gleam backend
+|Full backend service implementation on BEAM
+|☐ Pending
+|===
+
+=== Acceptance Criteria
+
+* [x] Router can dispatch events to at least one target
+* [x] CLI can list, add, and remove routes
+* [x] ABI definitions compile with Idris2
+* [ ] queueconn runtime dispatches to live targets
+* [ ] Health check endpoints respond correctly
+* [ ] Gleam backend handles job queue persistence
+
+---
+
+== Phase 2: Advanced Routing
+
+*Status*: Planned
+
+=== Objective
+
+Add intelligent routing capabilities — ML-based scoring, adaptive load balancing, circuit breakers, and multi-strategy composition.
+
+=== Deliverables
+
+[%autowidth]
+|===
+|Component |Description
+
+|ML-based route scoring
+|Score routes by latency, reliability, and cost using learned weights
+
+|Adaptive load balancing
+|Distribute events across targets proportional to capacity
+
+|Circuit breakers
+|Halt routing to failing targets with exponential backoff recovery
+
+|Multi-strategy composition
+|Chain routing strategies (e.g. score → balance → circuit-break)
+
+|Strategy hot-reload
+|Swap routing strategies at runtime without restart
+|===
+
+=== Acceptance Criteria
+
+* [ ] Route scoring produces consistent rankings
+* [ ] Load balancer distributes within 5% of ideal proportions
+* [ ] Circuit breaker trips after configurable failure threshold
+* [ ] Strategies compose without ordering bugs
+
+---
+
+== Phase 3: Observability
+
+*Status*: Planned
+
+=== Objective
+
+Instrument the router with metrics, distributed tracing, and alerting — feeding data to PanLL dashboard panels.
+
+=== Deliverables
+
+[%autowidth]
+|===
+|Component |Description
+
+|Metrics collection
+|Prometheus-compatible counters for route hits, latency, errors
+
+|Distributed tracing
+|OpenTelemetry spans across router → target hops
+
+|PanLL dashboard data sources
+|Structured metrics feed to `panels/har-dashboard`
+
+|Alerting
+|Configurable threshold alerts (Nickel-based rules)
+|===
+
+=== Acceptance Criteria
+
+* [ ] Metrics endpoint serves Prometheus scrape format
+* [ ] Traces propagate across router and target boundaries
+* [ ] PanLL panel renders live route health
+* [ ] Alerts fire within 30 seconds of threshold breach
+
+---
+
+== Phase 4: Target Ecosystem
+
+*Status*: Planned
+
+=== Objective
+
+Implement concrete automation targets that the router dispatches to.
+
+=== Deliverables
+
+[%autowidth]
+|===
+|Target |Description
+
+|Web Automation Target
+|Browser-driven automation via CDP/WebDriver (rpa-elysium primary)
+
+|API Integration Target
+|REST/GraphQL calls with auth, retry, rate-limiting
+
+|Document Processing Target
+|PDF, Excel, CSV, email extraction and generation
+
+|Desktop Automation Target
+|Platform-native input simulation and window management
+|===
+
+=== Acceptance Criteria
+
+* [ ] rpa-elysium target passes end-to-end workflow test
+* [ ] API target handles OAuth2, JWT, and API-key auth
+* [ ] Document target processes a sample invoice pipeline
+* [ ] Desktop target works on Linux (Wayland + X11)
+
+---
+
+== Phase 5: Enterprise
+
+*Status*: Future
+
+=== Objective
+
+Enterprise-grade features for multi-tenant deployment, security, and compliance.
+
+=== Deliverables
+
+[%autowidth]
+|===
+|Component |Description
+
+|Multi-tenancy
+|Isolated routing namespaces per tenant
+
+|SSO integration
+|SAML 2.0 and OIDC authentication
+
+|Audit compliance
+|Immutable audit log of all route decisions
+
+|SLA monitoring
+|Uptime, latency, and throughput guarantees with alerting
+|===
+
+=== Acceptance Criteria
+
+* [ ] Tenants cannot observe or affect each other's routes
+* [ ] SSO works with at least two major providers
+* [ ] Audit log is tamper-evident
+* [ ] SLA breaches generate alerts within 60 seconds
+
+---
+
+== Technical Decisions
+
+=== Why These Technologies?
+
+[cols="1,3"]
+|===
+|Decision |Rationale
+
+|*Rust for core*
+|Memory safety, zero-cost abstractions, excellent async ecosystem
+
+|*Idris2 for ABI*
+|Dependent types prove interface correctness at compile-time
+
+|*Zig for FFI*
+|Native C ABI compatibility, cross-compilation, zero runtime deps
+
+|*Ephapax for ownership*
+|Linear types guarantee exactly-once event delivery
+
+|*proven-servers*
+|Formally verified FSM lifecycle and queue dispatch
+
+|*PanLL for monitoring*
+|Panel-based dashboard with live data sources
+
+|*Gleam for backend*
+|BEAM reliability, functional purity, actor model
+
+|*No Python/Node*
+|Avoid dependency hell, prefer compiled languages
+|===
+
+=== Architecture Principles
+
+1. *Pluggable* — Routing strategies are trait-based and hot-swappable
+2. *Type-safe* — Idris2 ABI proofs, Rust type system, Ephapax linear types
+3. *Observable* — Metrics, traces, and PanLL panels at every layer
+4. *Resilient* — Circuit breakers, retries, graceful degradation
+5. *Target-agnostic* — Router dispatches to any conforming target
+6. *FOSS* — No proprietary dependencies
+
+---
+
+== Contributing
+
+Contributions are welcome. Priority areas:
+
+1. Routing strategy implementations
+2. rpa-elysium integration testing
+3. Gleam backend service development
+4. PanLL panel data sources
+5. Documentation and examples
+
+See link:CONTRIBUTING.md[CONTRIBUTING.md] for guidelines.
+
+---
+
+== License
+
+This roadmap and the Hybrid Automation Router project are licensed under PMPL-1.0-or-later.
+
+---
+
+_Last updated: 2026-03-16_

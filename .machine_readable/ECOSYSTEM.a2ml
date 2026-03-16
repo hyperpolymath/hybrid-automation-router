@@ -1,26 +1,36 @@
 # SPDX-License-Identifier: PMPL-1.0-or-later
-# Copyright (c) {{CURRENT_YEAR}} {{AUTHOR}} ({{OWNER}}) <{{AUTHOR_EMAIL}}>
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
 # ECOSYSTEM.a2ml — Project ecosystem position
 # Relationships, dependencies, integration points.
 
 [metadata]
 version = "0.1.0"
-last-updated = "{{CURRENT_DATE}}"
+last-updated = "2026-03-16"
 
 [project]
-name = "{{PROJECT_NAME}}"
-purpose = "{{PROJECT_PURPOSE}}"
-role = "{{PROJECT_ROLE}}"  # e.g. ffi-infrastructure, cli-tool, library, service
+name = "hybrid-automation-router"
+purpose = "Pluggable routing engine that dispatches automation events from sources to targets"
+role = "cli-tool"  # Router engine + CLI, consumed by rpa-elysium and other automation targets
 
 [position-in-ecosystem]
-tier = "infrastructure"  # 1 | 2 | infrastructure
+tier = "infrastructure"  # Core routing layer that other automation tools depend on
+ecosystem = "hyperpolymath"
+type = "standalone-tool"
 
 [related-projects]
 # relationship types: sibling-standard, dependency, dependent, inspiration, potential-consumer
-# - { name = "language-bridges", relationship = "sibling-standard" }
-# - { name = "hypatia", relationship = "potential-consumer" }
+rpa-elysium = { relationship = "dependent", notes = "Primary integration target — HAR routes events to rpa-elysium for execution" }
+proven-servers = { relationship = "dependency", notes = "ABI consumer — uses proven-fsm for lifecycle and proven-queueconn for dispatch" }
+panll = { relationship = "dependency", notes = "Panel provider — HAR dashboard and rpa-elysium panels in panels/" }
+developer-ecosystem = { relationship = "potential-consumer", notes = "Tooling consumer — uses Rust, Zig, Idris2, Gleam from dev-ecosystem" }
+reposystem = { relationship = "sibling-standard", notes = "Governance sibling — shares RSR compliance, contractiles, bot directives" }
+rhodium-standard-repositories = { relationship = "sibling-standard", notes = "Implements RSR 2026 standards for repository structure and CI/CD" }
 
 [integration-points]
 # External systems this project connects to
-# - { system = "gitbot-fleet", direction = "outbound", protocol = "repository_dispatch" }
+rpa-elysium-target = { system = "rpa-elysium", direction = "outbound", protocol = "event_dispatch" }
+proven-fsm = { system = "proven-servers", direction = "inbound", protocol = "fsm_lifecycle" }
+proven-queueconn = { system = "proven-servers", direction = "outbound", protocol = "queue_dispatch" }
+panll-dashboard = { system = "panll", direction = "outbound", protocol = "panel_data_source" }
+gitbot-fleet = { system = "gitbot-fleet", direction = "outbound", protocol = "repository_dispatch" }

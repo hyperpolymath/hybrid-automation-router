@@ -1,28 +1,40 @@
 # SPDX-License-Identifier: PMPL-1.0-or-later
-# Copyright (c) {{CURRENT_YEAR}} {{AUTHOR}} ({{OWNER}}) <{{AUTHOR_EMAIL}}>
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
 # META.a2ml — Project meta-level information
 # Architecture decisions, design rationale, governance.
 
 [metadata]
 version = "0.1.0"
-last-updated = "{{CURRENT_DATE}}"
+last-updated = "2026-03-16"
 
 [project-info]
-type = "{{PROJECT_TYPE}}"  # library | binary | monorepo | service | website
-languages = []             # e.g. ["rust", "zig", "idris2"]
+type = "binary"  # Rust workspace producing har-cli binary + har-core/har-router libraries
+languages = ["rust", "zig", "idris2", "ephapax", "gleam"]
 license = "PMPL-1.0-or-later"
-author = "{{AUTHOR}} ({{OWNER}})"
+author = "Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>"
+standard = "RSR 2026"
 
 [architecture-decisions]
 # ADR format: status = proposed | accepted | deprecated | superseded | rejected
-# - { id = "ADR-001", title = "Use Zig for FFI", status = "accepted", date = "2026-02-14" }
+
+ADR-001 = { title = "Rust core with pluggable routing strategies", status = "accepted", date = "2026-03-16", rationale = "Trait-based strategy pattern allows hot-swappable routing without recompilation. Rust provides memory safety and zero-cost abstractions for high-throughput event dispatch." }
+
+ADR-002 = { title = "proven-fsm for router lifecycle management", status = "accepted", date = "2026-03-16", rationale = "Formally verified finite state machine ensures the router transitions through valid states only (init, ready, routing, draining, stopped). Eliminates invalid-state bugs." }
+
+ADR-003 = { title = "proven-queueconn for target dispatch", status = "accepted", date = "2026-03-16", rationale = "Queue-based dispatch decouples the router from targets, enabling backpressure, retry, and dead-letter handling with formal guarantees." }
+
+ADR-004 = { title = "Ephapax linear types for ownership safety", status = "accepted", date = "2026-03-16", rationale = "Linear types guarantee exactly-once event delivery — an event cannot be duplicated or dropped silently. Critical for automation correctness." }
+
+ADR-005 = { title = "rpa-elysium as first-class integration target", status = "accepted", date = "2026-03-16", rationale = "RPA Elysium is the primary consumer of routed events. HAR's target interface is designed around rpa-elysium's bot framework API, with panels/ providing dedicated monitoring." }
+
+ADR-006 = { title = "PanLL panels for monitoring and dashboards", status = "accepted", date = "2026-03-16", rationale = "PanLL's panel-based architecture provides live data sources for route health, dispatch latency, and target status without building a custom dashboard." }
 
 [development-practices]
 build-tool = "just"
 container-runtime = "podman"
 ci-platform = "github-actions"
-package-manager = "guix"  # guix | nix | cargo | mix
+package-manager = "cargo"  # Rust workspace; guix for system-level
 
 [maintenance-axes]
 scoping-first = true
@@ -51,3 +63,6 @@ effects-evidence = "benchmark execution/results and maintainer status dialogue/r
 
 [design-rationale]
 # Key design decisions and their reasoning
+routing-architecture = "Event sources push to the router, which applies a chain of strategies (score, balance, circuit-break) before dispatching to a target via queueconn."
+target-abstraction = "Targets implement a trait (AutomationTarget) so the router is target-agnostic — rpa-elysium, API, desktop, and document targets all conform."
+abi-ffi-split = "Idris2 defines the ABI with dependent-type proofs; Zig implements the C-compatible FFI. This separates correctness (Idris2) from performance (Zig)."

@@ -1,4 +1,4 @@
-= Contributing to {project-name}
+= Contributing to hybrid-automation-router
 :toc: preamble
 :icons: font
 
