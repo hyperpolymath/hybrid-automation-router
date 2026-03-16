@@ -1,0 +1,196 @@
+-- SPDX-License-Identifier: PMPL-1.0-or-later
+-- SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+--
+-- LinearRouting.eph — Ephapax linear type definitions for HAR
+--
+-- These types express linear ownership semantics for routing decisions,
+-- target connections, and event envelopes. They are SUPPLEMENTARY to the
+-- Idris2 ABI definitions (ProvenFSM.idr, ProvenQueue.idr) — when they
+-- conflict, the Idris2 definitions are authoritative.
+--
+-- Linear types guarantee:
+--   - Every incoming event gets a routing decision (no silent drops)
+--   - Every routing decision is dispatched to exactly one target
+--   - Every target connection is explicitly managed
+
+module HybridAutomationRouter.Abi.LinearRouting
+
+---------------------------------------------------------------------------
+-- EventEnvelope — wraps an incoming event.
+-- Linear: must be either routed or dead-lettered (never silently dropped).
+---------------------------------------------------------------------------
+
+--- An incoming automation event wrapped for routing.
+--- Linear: the envelope MUST be consumed by exactly one of:
+---   - routeEnvelope (produces a RouteDecision)
+---   - deadLetterEnvelope (explicitly drops with reason)
+--- Silently dropping an envelope is a compile-time error.
+type EventEnvelope linear =
+  { eventId   : String
+  , source    : EventSource
+  , category  : String
+  , priority  : EventPriority
+  , payload   : Bytes
+  , tags      : List String
+  }
+
+--- Route an event envelope to a target.
+--- Consumes the envelope linearly — it cannot be routed again.
+fn routeEnvelope (envelope : EventEnvelope) (targetId : String) -> RouteDecision =
+  let! e = envelope in
+  RouteDecision
+    { eventId    = e.eventId
+    , targetId   = targetId
+    , strategy   = CapabilityMatch
+    , confidence = 1.0
+    }
+
+--- Dead-letter an unroutable envelope.
+--- Still consumes it linearly — the event is logged, not silently lost.
+fn deadLetterEnvelope (envelope : EventEnvelope) (reason : String) -> DeadLetter =
+  let! e = envelope in
+  DeadLetter
+    { eventId = e.eventId
+    , reason  = reason
+    , source  = e.source
+    }
+
+---------------------------------------------------------------------------
+-- RouteDecision — a routing decision.
+-- Linear: must be dispatched to exactly one target.
+---------------------------------------------------------------------------
+
+--- A routing decision that MUST be dispatched exactly once.
+--- Created by the routing engine, consumed by the dispatcher.
+--- Cannot be duplicated (prevents double-dispatch) or dropped
+--- (prevents lost routing decisions).
+type RouteDecision linear =
+  { eventId    : String
+  , targetId   : String
+  , strategy   : RoutingStrategy
+  , confidence : Float64
+  }
+
+--- Dispatch a routing decision to its target.
+--- Consumes the decision linearly — cannot dispatch twice.
+fn dispatchDecision (decision : RouteDecision) -> DispatchResult =
+  let! d = decision in
+  sendToTarget d.targetId d.eventId
+
+---------------------------------------------------------------------------
+-- TargetConnection — a connection to an automation target.
+-- Linear: must be explicitly disconnected.
+---------------------------------------------------------------------------
+
+--- A connection handle to an automation target (e.g., rpa-elysium).
+--- Linear: MUST be explicitly disconnected via disconnectTarget.
+--- The compiler prevents connection leaks.
+type TargetConnection linear =
+  { targetId    : String
+  , endpoint    : String
+  , guarantee   : DeliveryGuarantee
+  , connectedAt : Int64
+  }
+
+--- Establish a connection to an automation target.
+--- Returns a linear handle that must eventually be disconnected.
+fn connectTarget
+  (targetId  : String)
+  (endpoint  : String)
+  (guarantee : DeliveryGuarantee)
+  (now       : Int64)
+  -> TargetConnection =
+  TargetConnection
+    { targetId    = targetId
+    , endpoint    = endpoint
+    , guarantee   = guarantee
+    , connectedAt = now
+    }
+
+--- Disconnect from a target, releasing the connection handle.
+--- Consumes the linear handle — cannot use connection after this.
+fn disconnectTarget (conn : TargetConnection) -> ConnectionReceipt =
+  let! c = conn in
+  ConnectionReceipt
+    { targetId       = c.targetId
+    , disconnectedAt = currentTime ()
+    }
+
+--- Dispatch an event through a target connection.
+--- The connection is borrowed (not consumed) — multiple events
+--- can flow through the same connection.
+--- The RouteDecision IS consumed (linear — dispatched exactly once).
+fn dispatchThrough (conn : &TargetConnection) (decision : RouteDecision) -> DispatchResult =
+  let! d = decision in
+  sendViaConnection conn d.targetId d.eventId
+
+---------------------------------------------------------------------------
+-- Complete routing pipeline using linear types.
+---------------------------------------------------------------------------
+
+--- Process an incoming event end-to-end:
+--- 1. Wrap in linear envelope (must be consumed)
+--- 2. Route to target (produces linear decision)
+--- 3. Dispatch decision (consumed exactly once)
+---
+--- Every step enforces single-use via `let!`.
+fn processIncoming
+  (conn    : &TargetConnection)
+  (eventId : String)
+  (source  : EventSource)
+  (category: String)
+  (payload : Bytes)
+  -> DispatchResult =
+  let! envelope = EventEnvelope
+    { eventId  = eventId
+    , source   = source
+    , category = category
+    , priority = Normal
+    , payload  = payload
+    , tags     = []
+    } in
+  let! decision = routeEnvelope envelope conn.targetId in
+  dispatchThrough conn decision
+
+---------------------------------------------------------------------------
+-- Supporting types (non-linear — pure data).
+---------------------------------------------------------------------------
+
+type EventSource =
+  | Filesystem { path : String }
+  | Webhook    { endpoint : String }
+  | Queue      { queueName : String }
+  | Schedule   { cron : String }
+  | Manual     { user : Option String }
+  | Chained    { sourceTarget : String }
+
+type EventPriority = Low | Normal | High | Critical
+
+type RoutingStrategy =
+  | Direct
+  | CapabilityMatch
+  | TagMatch
+  | RoundRobin
+  | WeightedRandom
+  | LeastLoaded
+  | Failover
+
+type DeliveryGuarantee = AtMostOnce | AtLeastOnce | ExactlyOnce
+
+type DispatchResult =
+  { eventId  : String
+  , targetId : String
+  , success  : Bool
+  , latency  : Int64
+  }
+
+type DeadLetter =
+  { eventId : String
+  , reason  : String
+  , source  : EventSource
+  }
+
+type ConnectionReceipt =
+  { targetId       : String
+  , disconnectedAt : Int64
+  }

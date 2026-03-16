@@ -21,14 +21,18 @@ core-types = "done"
 routing-engine = "done"
 cli = "done"
 panll-panels = "done"
-abi-ffi-scaffold = "not-started"
+abi-ffi-scaffold = "done"
+proven-fsm-bindings = "done"
+proven-queueconn-bindings = "done"
+ephapax-linear-types = "done"
 
 [next-actions]
-priority-1 = "Create GitHub repo and push initial commit"
-priority-2 = "Add ABI/FFI scaffold (shared types with rpa-elysium)"
-priority-3 = "Implement proven-queueconn integration for rpa-elysium dispatch"
+priority-1 = "Implement proven-queueconn runtime integration for rpa-elysium dispatch"
+priority-2 = "Wire health checks between HAR and rpa-elysium"
+priority-3 = "Add Gleam backend service for event persistence"
 priority-4 = "Add Gleam backend service for event persistence"
 priority-5 = "Wire health checks between HAR and rpa-elysium"
 
 [session-history]
 # 2026-03-17: Initial creation from rsr-template-repo — Rust workspace, 3 crates, PanLL panels, README
+# 2026-03-17: proven-fsm + proven-queueconn ABI bindings, Zig FFI (7 tests), Ephapax linear types, ABI-FFI-README
