@@ -15,7 +15,7 @@
 - CI/CD workflows: `.github/workflows/`
 
 ## Critical Invariants
-- NEVER create STATE.scm, META.scm, ECOSYSTEM.scm in the repository root
+- NEVER create .machine_readable/6a2/STATE.a2ml, .machine_readable/6a2/META.a2ml, .machine_readable/6a2/ECOSYSTEM.a2ml in the repository root
 - NEVER use TypeScript, Node.js, npm, Go, or Python
 - NEVER use MIT license — this project is PMPL-1.0-or-later
 - All actions SHA-pinned in workflows
@@ -23,7 +23,7 @@
 - Tight integration with rpa-elysium but MUST remain independently usable
 
 ## Workflow
-1. Read `.machine_readable/STATE.a2ml` for blockers and next actions.
+1. Read `.machine_readable/6a2/STATE.a2ml` for blockers and next actions.
 2. After edits, update STATE with outcomes and commit with a concise, imperative message.
 
 ## Key Integration Points
