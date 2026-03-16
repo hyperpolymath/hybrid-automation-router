@@ -17,6 +17,7 @@
 //!                       └── Delivery confirmation
 //! ```
 
+#![forbid(unsafe_code)]
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use har_core::{AutomationEvent, Error, Result, RouteDecision};

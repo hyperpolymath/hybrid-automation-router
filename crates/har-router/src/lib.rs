@@ -6,6 +6,7 @@
 //! Evaluates incoming [`AutomationEvent`]s against registered targets
 //! and produces [`RouteDecision`]s using configurable strategies.
 
+#![forbid(unsafe_code)]
 use har_core::{
     AutomationEvent, AutomationTarget, Error, Result, RouteDecision, RoutingContext,
     RoutingStrategy, TargetStatus,

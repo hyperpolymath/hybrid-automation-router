@@ -3,6 +3,7 @@
 
 //! HAR Metrics — Metrics collection for routing decisions
 
+#![forbid(unsafe_code)]
 use chrono::{DateTime, Utc};
 use har_core::RouteDecision;
 use serde::{Deserialize, Serialize};

@@ -12,6 +12,7 @@
 //! - [`targets`] — Convert `TargetConfig` into [`har_core::AutomationTarget`]
 //! - [`rules`] — Tag-based routing rule definitions and conversion
 
+#![forbid(unsafe_code)]
 pub mod loader;
 pub mod rules;
 pub mod targets;

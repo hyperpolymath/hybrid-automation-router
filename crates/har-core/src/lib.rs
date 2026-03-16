@@ -13,6 +13,7 @@
 //! - [`AutomationTarget`] — A registered automation endpoint
 //! - [`RoutingContext`] — Contextual information for making routing decisions
 
+#![forbid(unsafe_code)]
 pub mod error;
 pub mod event;
 pub mod route;

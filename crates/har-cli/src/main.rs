@@ -3,6 +3,7 @@
 
 //! HAR CLI — Command-line interface for the Hybrid Automation Router
 
+#![forbid(unsafe_code)]
 use clap::{Parser, Subcommand};
 use har_core::{AutomationEvent, AutomationTarget, EventSource, TargetStatus};
 use har_router::Router;

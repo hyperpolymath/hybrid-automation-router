@@ -3,6 +3,7 @@
 
 //! HAR Health — Health checking for automation targets
 
+#![forbid(unsafe_code)]
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use har_core::Result;
