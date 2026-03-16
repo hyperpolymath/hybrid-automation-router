@@ -5,6 +5,10 @@
 resolver = "2"
 members = [
     "crates/har-core",
+    "crates/har-config",
+    "crates/har-dispatch",
+    "crates/har-health",
+    "crates/har-metrics",
     "crates/har-router",
     "crates/har-cli",
 ]

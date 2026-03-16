@@ -1,0 +1,77 @@
+{
+  "name": "hybrid-automation-router",
+  "default_strategy": "capability_match",
+  "health_check_interval_ms": 30000,
+  "targets": [
+    {
+      "id": "rpa-elysium",
+      "name": "RPA Elysium Filesystem Automation",
+      "endpoint": "amqp://localhost:5672/rpa-tasks",
+      "protocol": "queue",
+      "capabilities": ["filesystem", "scheduled", "plugin"],
+      "delivery_guarantee": "at_least_once",
+      "weight": 150,
+      "enabled": true
+    },
+    {
+      "id": "web-automation",
+      "name": "Web Browser Automation",
+      "endpoint": "http://localhost:9222/automate",
+      "protocol": "http",
+      "capabilities": ["web", "api"],
+      "delivery_guarantee": "at_least_once",
+      "weight": 100,
+      "enabled": true
+    },
+    {
+      "id": "doc-processor",
+      "name": "Document Processing Pipeline",
+      "endpoint": "/var/run/har/doc-processor.sock",
+      "protocol": "unix_socket",
+      "capabilities": ["document", "ocr"],
+      "delivery_guarantee": "exactly_once",
+      "weight": 80,
+      "enabled": true
+    },
+    {
+      "id": "email-handler",
+      "name": "Email Integration",
+      "endpoint": "amqp://localhost:5672/email-tasks",
+      "protocol": "queue",
+      "capabilities": ["email", "nlp"],
+      "delivery_guarantee": "at_least_once",
+      "weight": 100,
+      "enabled": false
+    }
+  ],
+  "rules": [
+    {
+      "name": "filesystem-to-rpa",
+      "tags": ["filesystem", "file_watch", "archive"],
+      "target_ids": ["rpa-elysium"],
+      "priority": 10,
+      "enabled": true
+    },
+    {
+      "name": "web-scraping",
+      "tags": ["web", "scrape", "api_call"],
+      "target_ids": ["web-automation"],
+      "priority": 20,
+      "enabled": true
+    },
+    {
+      "name": "document-pipeline",
+      "tags": ["document", "pdf", "invoice", "ocr"],
+      "target_ids": ["doc-processor"],
+      "priority": 30,
+      "enabled": true
+    },
+    {
+      "name": "email-notifications",
+      "tags": ["email", "notification"],
+      "target_ids": ["email-handler"],
+      "priority": 100,
+      "enabled": false
+    }
+  ]
+}
