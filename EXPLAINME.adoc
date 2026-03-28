@@ -2,7 +2,7 @@
 
 = Hybrid Automation Router -- EXPLAINME
 
-== "Intelligent event routing for automation targets"
+== Intelligent event routing for automation targets
 
 [quote, README.adoc]
 ____
