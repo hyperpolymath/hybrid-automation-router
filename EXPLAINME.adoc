@@ -1,27 +1,41 @@
-= Hybrid Automation Router — EXPLAINME
-:toc: preamble
+// SPDX-License-Identifier: PMPL-1.0-or-later
 
-This document backs up the claims made in README with evidence and rationale.
+= Hybrid Automation Router -- EXPLAINME
 
-== What Is This?
+== "Intelligent event routing for automation targets"
 
-Hybrid Automation Router is a hyperpolymath project. See README.adoc for usage.
+[quote, README.adoc]
+____
+The Hybrid Automation Router (HAR) is an intelligent routing layer that
+receives automation events from multiple sources (filesystem watchers,
+webhooks, queues, schedules) and routes them to the best automation target
+based on capabilities, tags, priorities, and configurable strategies.
+____
 
-== Why These Choices?
+HAR is a Rust workspace of 7 crates (core, config, dispatch, health, metrics,
+router, CLI) backed by Idris2 ABI definitions and an Ephapax linear-types
+guarantee for exactly-once delivery.
+See the README.adoc architecture diagram for the full event flow.
 
-=== Language
+**Caveat:** Phase 1 -- the routing engine compiles and tests pass, but
+production deployment with live RPA Elysium targets is not yet validated.
 
-The language(s) used in this project were chosen per the hyperpolymath
-language policy (see CLAUDE.md for the full list of allowed/banned languages).
+[cols="1,2", options="header"]
+|===
+| Path | Proves
 
-=== Architecture
+| `Cargo.toml`
+| 7-crate workspace (har-core through har-cli), Rust 2021 edition
 
-Architecture decisions are documented in `.machine_readable/` checkpoint files.
+| `src/abi/ProvenFSM.idr`
+| Idris2 ABI for router lifecycle state machine
 
-== Alternatives Considered
+| `src/abi/ProvenQueue.idr`
+| Idris2 ABI for queue-based dispatch with backpressure
 
-(To be filled in as the project matures.)
+| `src/abi/LinearRouting.eph`
+| Ephapax linear types enforcing exactly-once event delivery
 
-== Proof of Claims
-
-(Link formal verification results from the `proven` repo where applicable.)
+| `README.adoc` (Architecture)
+| ASCII diagram of event-source -> router -> target flow
+|===
