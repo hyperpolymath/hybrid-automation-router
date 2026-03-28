@@ -953,3 +953,7 @@ help-me:
     @echo "  https://github.com/hyperpolymath/hybrid-automation-router/issues/new"
     @echo ""
     @echo "Include the output of 'just doctor' in your report."
+
+# Run panic-attacker pre-commit scan
+assail:
+    @command -v panic-attack >/dev/null 2>&1 && panic-attack assail . || echo "panic-attack not found — install from https://github.com/hyperpolymath/panic-attacker"
