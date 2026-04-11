@@ -1,0 +1,35 @@
+name: K9-SVC Validation
+on: [push, pull_request]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate contractiles
+        run: |
+          #!/bin/bash
+          set -euo
+          
+          # Check all contractiles exist
+          for file in Must Trust Dust Lust Adjust Intend; do
+            if [ ! -f "${file}.a2ml" ]; then
+              echo "ERROR: Missing contractile: ${file}.a2ml"
+              exit 1
+            fi
+          done
+          
+          echo "✓ All contractiles present"
+          
+          # Basic syntax validation
+          for file in *.a2ml; do
+            if [ -f "$file" ]; then
+              # Check for basic structure
+              if ! grep -q "^// SPDX-License-Identifier:" "$file"; then
+                echo "ERROR: Missing SPDX header in $file"
+                exit 1
+              fi
+            fi
+          done
+          
+          echo "✓ Contractile validation passed"

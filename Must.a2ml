@@ -1,0 +1,14 @@
+// Must.a2ml for hybrid-automation-router
+// SPDX-License-Identifier: PMPL-1.0-or-later
+// Generated: 2026-04-08T19:52:12+01:00
+
+Must {
+    name: "hybrid-automation-router"
+    version: "1.0.0"
+    description: "Must contractile for hybrid-automation-router"
+    
+    // Basic Must configuration
+    enabled: true
+    
+    // Repository-specific settings will be added here
+}

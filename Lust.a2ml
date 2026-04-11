@@ -1,0 +1,14 @@
+// Lust.a2ml for hybrid-automation-router
+// SPDX-License-Identifier: PMPL-1.0-or-later
+// Generated: 2026-04-08T19:52:12+01:00
+
+Lust {
+    name: "hybrid-automation-router"
+    version: "1.0.0"
+    description: "Lust contractile for hybrid-automation-router"
+    
+    // Basic Lust configuration
+    enabled: true
+    
+    // Repository-specific settings will be added here
+}

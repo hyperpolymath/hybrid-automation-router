@@ -1,0 +1,14 @@
+// Trust.a2ml for hybrid-automation-router
+// SPDX-License-Identifier: PMPL-1.0-or-later
+// Generated: 2026-04-08T19:52:12+01:00
+
+Trust {
+    name: "hybrid-automation-router"
+    version: "1.0.0"
+    description: "Trust contractile for hybrid-automation-router"
+    
+    // Basic Trust configuration
+    enabled: true
+    
+    // Repository-specific settings will be added here
+}
