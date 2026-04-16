@@ -314,7 +314,7 @@ mod tests {
         let event = test_event();
         let decision = test_decision(&event.id);
 
-        let receipt = dispatcher.dispatch(&decision, &event).await.unwrap();
+        let receipt = dispatcher.dispatch(&decision, &event).await.expect("TODO: handle error");
         assert_eq!(receipt.target_id, "rpa-elysium");
         assert!(receipt.acknowledged);
     }
@@ -358,7 +358,7 @@ mod tests {
         assert!(transport.is_connected());
 
         let event = test_event();
-        let receipt = transport.deliver(&event).await.unwrap();
+        let receipt = transport.deliver(&event).await.expect("TODO: handle error");
         assert!(receipt.acknowledged);
 
         let delivered = transport.delivered_events().await;
@@ -373,7 +373,7 @@ mod tests {
         let event = test_event();
         let decision = RouteDecision::capability_match(&event.id, "t1", 1.0);
 
-        dispatcher.dispatch(&decision, &event).await.unwrap();
+        dispatcher.dispatch(&decision, &event).await.expect("TODO: handle error");
         let receipts = dispatcher.receipts().await;
         assert_eq!(receipts.len(), 1);
     }

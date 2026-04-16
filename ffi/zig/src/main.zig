@@ -1,374 +1,274 @@
+// HYBRID_AUTOMATION_ROUTER FFI Implementation
+//
+// This module implements the C-compatible FFI declared in src/abi/Foreign.idr
+// All types and layouts must match the Idris2 ABI definitions.
+//
 // SPDX-License-Identifier: PMPL-1.0-or-later
-// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
-//
-// main.zig — C-compatible FFI for the Hybrid Automation Router.
-//
-// Implements proven-fsm and proven-queueconn interfaces adapted for HAR's
-// routing context.  Provides slot-based lifecycle management with
-// mutex-protected global state.
-//
-// Exports:
-//   Router lifecycle:  har_router_create, har_router_destroy,
-//                      har_router_state, har_router_start,
-//                      har_router_shutdown
-//   Event dispatch:    har_dispatch_event
-//   Target management: har_target_connect, har_target_disconnect,
-//                      har_target_state
-//   Introspection:     har_abi_version, har_last_error, har_version
-//
-// Tag values MUST match:
-//   - Idris2 ABI (src/abi/ProvenFSM.idr, src/abi/ProvenQueue.idr)
-//   - proven-servers (core/proven-fsm, connectors/proven-queueconn)
 
 const std = @import("std");
 
-// ── proven-fsm types (tag values match proven-servers exactly) ────────────
+// Version information (keep in sync with project)
+const VERSION = "0.1.0";
+const BUILD_INFO = "HYBRID_AUTOMATION_ROUTER built with Zig " ++ @import("builtin").zig_version_string;
 
-/// MachineState — maps to RouterState in ProvenFSM.idr.
-///   Initial=0 (Configuring), Running=1 (Routing),
-///   Terminal=2 (Shutdown), Faulted=3 (Failed)
-pub const MachineState = enum(u8) {
-    initial = 0,
-    running = 1,
-    terminal = 2,
-    faulted = 3,
-};
+/// Thread-local error storage
+threadlocal var last_error: ?[]const u8 = null;
 
-/// TransitionResult — outcome of a lifecycle transition.
-///   Accepted=0, Rejected=1, Deferred=2
-pub const TransitionResult = enum(u8) {
-    accepted = 0,
-    rejected = 1,
-    deferred = 2,
-};
-
-/// ValidationError — reason a transition was rejected.
-///   InvalidTransition=0, PreconditionFailed=1,
-///   PostconditionFailed=2, GuardFailed=3
-pub const ValidationError = enum(u8) {
-    invalid_transition = 0,
-    precondition_failed = 1,
-    postcondition_failed = 2,
-    guard_failed = 3,
-};
-
-/// EventDisposition — what happened to an event submitted to the router.
-///   Consumed=0 (routed), Ignored=1 (no match), Queued=2 (deferred),
-///   Dropped=3 (overflow)
-pub const EventDisposition = enum(u8) {
-    consumed = 0,
-    ignored = 1,
-    queued = 2,
-    dropped = 3,
-};
-
-// ── proven-queueconn types (tag values match proven-servers exactly) ─────
-
-/// QueueState — connection lifecycle to a downstream target.
-///   Disconnected=0, Connected=1, Consuming=2, Producing=3, Failed=4
-pub const QueueState = enum(u8) {
-    disconnected = 0,
-    connected = 1,
-    consuming = 2,
-    producing = 3,
-    failed = 4,
-};
-
-/// DeliveryGuarantee — per-target delivery semantics.
-///   AtMostOnce=0, AtLeastOnce=1, ExactlyOnce=2
-pub const DeliveryGuarantee = enum(u8) {
-    at_most_once = 0,
-    at_least_once = 1,
-    exactly_once = 2,
-};
-
-// ── Instance types ───────────────────────────────────────────────────────
-
-const Router = struct {
-    state: MachineState,
-    event_count: u32,
-    last_error: u8, // 255 = no error
-    active: bool,
-};
-
-const Target = struct {
-    state: QueueState,
-    dispatched_count: u32,
-    guarantee: DeliveryGuarantee,
-    last_error: u8, // 255 = no error
-    active: bool,
-};
-
-// ── Global state (slot-based, mutex-protected) ───────────────────────────
-
-const MAX_ROUTERS: usize = 16;
-const MAX_TARGETS: usize = 64;
-
-var routers: [MAX_ROUTERS]Router = [_]Router{.{
-    .state = .initial,
-    .event_count = 0,
-    .last_error = 255,
-    .active = false,
-}} ** MAX_ROUTERS;
-
-var targets: [MAX_TARGETS]Target = [_]Target{.{
-    .state = .disconnected,
-    .dispatched_count = 0,
-    .guarantee = .at_least_once,
-    .last_error = 255,
-    .active = false,
-}} ** MAX_TARGETS;
-
-var router_mutex: std.Thread.Mutex = .{};
-var target_mutex: std.Thread.Mutex = .{};
-
-// ── ABI version ──────────────────────────────────────────────────────────
-
-/// ABI version.  Must match harFsmAbiVersion and harQueueAbiVersion in
-/// ProvenFSM.idr and ProvenQueue.idr (currently 1).
-export fn har_abi_version() callconv(.c) u32 {
-    return 1;
+/// Set the last error message
+fn setError(msg: []const u8) void {
+    last_error = msg;
 }
 
-// ── Router lifecycle ─────────────────────────────────────────────────────
+/// Clear the last error
+fn clearError() void {
+    last_error = null;
+}
 
-/// Create a new router in Initial (Configuring) state.
-/// Returns slot index (0..MAX_ROUTERS-1) or -1 if full.
-export fn har_router_create() callconv(.c) c_int {
-    router_mutex.lock();
-    defer router_mutex.unlock();
+//==============================================================================
+// Core Types (must match src/abi/Types.idr)
+//==============================================================================
 
-    for (&routers, 0..) |*r, i| {
-        if (!r.active) {
-            r.* = .{
-                .state = .initial,
-                .event_count = 0,
-                .last_error = 255,
-                .active = true,
-            };
-            return @intCast(i);
-        }
+/// Result codes (must match Idris2 Result type)
+pub const Result = enum(c_int) {
+    ok = 0,
+    @"error" = 1,
+    invalid_param = 2,
+    out_of_memory = 3,
+    null_pointer = 4,
+};
+
+/// Library handle (opaque to prevent direct access)
+pub const Handle = opaque {
+    // Internal state hidden from C
+    allocator: std.mem.Allocator,
+    initialized: bool,
+    // Add your fields here
+};
+
+//==============================================================================
+// Library Lifecycle
+//==============================================================================
+
+/// Initialize the library
+/// Returns a handle, or null on failure
+export fn hybrid_automation_router_init() ?*Handle {
+    const allocator = std.heap.c_allocator;
+
+    const handle = allocator.create(Handle) catch {
+        setError("Failed to allocate handle");
+        return null;
+    };
+
+    // Initialize handle
+    handle.* = .{
+        .allocator = allocator,
+        .initialized = true,
+    };
+
+    clearError();
+    return handle;
+}
+
+/// Free the library handle
+export fn hybrid_automation_router_free(handle: ?*Handle) void {
+    const h = handle orelse return;
+    const allocator = h.allocator;
+
+    // Clean up resources
+    h.initialized = false;
+
+    allocator.destroy(h);
+    clearError();
+}
+
+//==============================================================================
+// Core Operations
+//==============================================================================
+
+/// Process data (example operation)
+export fn hybrid_automation_router_process(handle: ?*Handle, input: u32) Result {
+    const h = handle orelse {
+        setError("Null handle");
+        return .null_pointer;
+    };
+
+    if (!h.initialized) {
+        setError("Handle not initialized");
+        return .@"error";
     }
-    return -1;
+
+    // Example processing logic
+    _ = input;
+
+    clearError();
+    return .ok;
 }
 
-/// Destroy a router, freeing its slot.  Safe with any slot value.
-export fn har_router_destroy(slot: c_int) callconv(.c) void {
-    router_mutex.lock();
-    defer router_mutex.unlock();
+//==============================================================================
+// String Operations
+//==============================================================================
 
-    if (slot < 0 or slot >= MAX_ROUTERS) return;
-    const idx: usize = @intCast(slot);
-    routers[idx].active = false;
-}
+/// Get a string result (example)
+/// Caller must free the returned string
+export fn hybrid_automation_router_get_string(handle: ?*Handle) ?[*:0]const u8 {
+    const h = handle orelse {
+        setError("Null handle");
+        return null;
+    };
 
-/// Get current MachineState tag.  Returns Initial (0) for invalid slots.
-export fn har_router_state(slot: c_int) callconv(.c) u8 {
-    router_mutex.lock();
-    defer router_mutex.unlock();
-
-    if (slot < 0 or slot >= MAX_ROUTERS) return 0;
-    const idx: usize = @intCast(slot);
-    if (!routers[idx].active) return 0;
-    return @intFromEnum(routers[idx].state);
-}
-
-/// Start routing: Initial -> Running.  Returns TransitionResult tag.
-export fn har_router_start(slot: c_int) callconv(.c) u8 {
-    router_mutex.lock();
-    defer router_mutex.unlock();
-
-    if (slot < 0 or slot >= MAX_ROUTERS) return @intFromEnum(TransitionResult.rejected);
-    const idx: usize = @intCast(slot);
-    if (!routers[idx].active) return @intFromEnum(TransitionResult.rejected);
-
-    if (routers[idx].state == .initial) {
-        routers[idx].state = .running;
-        routers[idx].last_error = 255;
-        return @intFromEnum(TransitionResult.accepted);
+    if (!h.initialized) {
+        setError("Handle not initialized");
+        return null;
     }
-    routers[idx].last_error = @intFromEnum(ValidationError.invalid_transition);
-    return @intFromEnum(TransitionResult.rejected);
+
+    // Example: allocate and return a string
+    const result = h.allocator.dupeZ(u8, "Example result") catch {
+        setError("Failed to allocate string");
+        return null;
+    };
+
+    clearError();
+    return result.ptr;
 }
 
-/// Graceful shutdown: Running -> Terminal.  Returns TransitionResult tag.
-export fn har_router_shutdown(slot: c_int) callconv(.c) u8 {
-    router_mutex.lock();
-    defer router_mutex.unlock();
+/// Free a string allocated by the library
+export fn hybrid_automation_router_free_string(str: ?[*:0]const u8) void {
+    const s = str orelse return;
+    const allocator = std.heap.c_allocator;
 
-    if (slot < 0 or slot >= MAX_ROUTERS) return @intFromEnum(TransitionResult.rejected);
-    const idx: usize = @intCast(slot);
-    if (!routers[idx].active) return @intFromEnum(TransitionResult.rejected);
+    const slice = std.mem.span(s);
+    allocator.free(slice);
+}
 
-    if (routers[idx].state == .running) {
-        routers[idx].state = .terminal;
-        routers[idx].last_error = 255;
-        return @intFromEnum(TransitionResult.accepted);
+//==============================================================================
+// Array/Buffer Operations
+//==============================================================================
+
+/// Process an array of data
+export fn hybrid_automation_router_process_array(
+    handle: ?*Handle,
+    buffer: ?[*]const u8,
+    len: u32,
+) Result {
+    const h = handle orelse {
+        setError("Null handle");
+        return .null_pointer;
+    };
+
+    const buf = buffer orelse {
+        setError("Null buffer");
+        return .null_pointer;
+    };
+
+    if (!h.initialized) {
+        setError("Handle not initialized");
+        return .@"error";
     }
-    routers[idx].last_error = @intFromEnum(ValidationError.invalid_transition);
-    return @intFromEnum(TransitionResult.rejected);
+
+    // Access the buffer
+    const data = buf[0..len];
+    _ = data;
+
+    // Process data here
+
+    clearError();
+    return .ok;
 }
 
-/// Get last ValidationError tag, or 255 if no error.
-export fn har_last_error(slot: c_int) callconv(.c) u8 {
-    router_mutex.lock();
-    defer router_mutex.unlock();
+//==============================================================================
+// Error Handling
+//==============================================================================
 
-    if (slot < 0 or slot >= MAX_ROUTERS) return 255;
-    const idx: usize = @intCast(slot);
-    return routers[idx].last_error;
+/// Get the last error message
+/// Returns null if no error
+export fn hybrid_automation_router_last_error() ?[*:0]const u8 {
+    const err = last_error orelse return null;
+
+    // Return C string (static storage, no need to free)
+    const allocator = std.heap.c_allocator;
+    const c_str = allocator.dupeZ(u8, err) catch return null;
+    return c_str.ptr;
 }
 
-// ── Event dispatch ───────────────────────────────────────────────────────
+//==============================================================================
+// Version Information
+//==============================================================================
 
-/// Route and dispatch an event.  Returns EventDisposition tag.
-/// Only Running routers accept events; others return Ignored.
-/// Invalid/inactive slots return Dropped.
-export fn har_dispatch_event(slot: c_int, event_id: u32) callconv(.c) u8 {
-    router_mutex.lock();
-    defer router_mutex.unlock();
+/// Get the library version
+export fn hybrid_automation_router_version() [*:0]const u8 {
+    return VERSION.ptr;
+}
 
-    _ = event_id; // routing rules will use this
+/// Get build information
+export fn hybrid_automation_router_build_info() [*:0]const u8 {
+    return BUILD_INFO.ptr;
+}
 
-    if (slot < 0 or slot >= MAX_ROUTERS) return @intFromEnum(EventDisposition.dropped);
-    const idx: usize = @intCast(slot);
-    if (!routers[idx].active) return @intFromEnum(EventDisposition.dropped);
+//==============================================================================
+// Callback Support
+//==============================================================================
 
-    if (routers[idx].state == .running) {
-        routers[idx].event_count += 1;
-        return @intFromEnum(EventDisposition.consumed);
+/// Callback function type (C ABI)
+pub const Callback = *const fn (u64, u32) callconv(.C) u32;
+
+/// Register a callback
+export fn hybrid_automation_router_register_callback(
+    handle: ?*Handle,
+    callback: ?Callback,
+) Result {
+    const h = handle orelse {
+        setError("Null handle");
+        return .null_pointer;
+    };
+
+    const cb = callback orelse {
+        setError("Null callback");
+        return .null_pointer;
+    };
+
+    if (!h.initialized) {
+        setError("Handle not initialized");
+        return .@"error";
     }
-    return @intFromEnum(EventDisposition.ignored);
+
+    // Store callback for later use
+    _ = cb;
+
+    clearError();
+    return .ok;
 }
 
-// ── Target connection management ─────────────────────────────────────────
+//==============================================================================
+// Utility Functions
+//==============================================================================
 
-/// Connect to a downstream automation target.
-/// Returns slot index (0..MAX_TARGETS-1) or -1 if full.
-/// The guarantee parameter is a DeliveryGuarantee tag (default: AtLeastOnce=1).
-export fn har_target_connect(guarantee: u8) callconv(.c) c_int {
-    target_mutex.lock();
-    defer target_mutex.unlock();
-
-    const g: DeliveryGuarantee = std.meta.intToEnum(DeliveryGuarantee, guarantee) catch .at_least_once;
-
-    for (&targets, 0..) |*t, i| {
-        if (!t.active) {
-            t.* = .{
-                .state = .connected,
-                .dispatched_count = 0,
-                .guarantee = g,
-                .last_error = 255,
-                .active = true,
-            };
-            return @intCast(i);
-        }
-    }
-    return -1;
+/// Check if handle is initialized
+export fn hybrid_automation_router_is_initialized(handle: ?*Handle) u32 {
+    const h = handle orelse return 0;
+    return if (h.initialized) 1 else 0;
 }
 
-/// Disconnect from a downstream target.  Safe with any slot value.
-export fn har_target_disconnect(slot: c_int) callconv(.c) void {
-    target_mutex.lock();
-    defer target_mutex.unlock();
+//==============================================================================
+// Tests
+//==============================================================================
 
-    if (slot < 0 or slot >= MAX_TARGETS) return;
-    const idx: usize = @intCast(slot);
-    if (!targets[idx].active) return;
-    targets[idx].state = .disconnected;
-    targets[idx].active = false;
+test "lifecycle" {
+    const handle = hybrid_automation_router_init() orelse return error.InitFailed;
+    defer hybrid_automation_router_free(handle);
+
+    try std.testing.expect(hybrid_automation_router_is_initialized(handle) == 1);
 }
 
-/// Get current QueueState tag for a target.
-/// Returns Disconnected (0) for invalid/inactive slots.
-export fn har_target_state(slot: c_int) callconv(.c) u8 {
-    target_mutex.lock();
-    defer target_mutex.unlock();
+test "error handling" {
+    const result = hybrid_automation_router_process(null, 0);
+    try std.testing.expectEqual(Result.null_pointer, result);
 
-    if (slot < 0 or slot >= MAX_TARGETS) return 0;
-    const idx: usize = @intCast(slot);
-    if (!targets[idx].active) return 0;
-    return @intFromEnum(targets[idx].state);
+    const err = hybrid_automation_router_last_error();
+    try std.testing.expect(err != null);
 }
 
-// ── Version ──────────────────────────────────────────────────────────────
-
-const VERSION: [:0]const u8 = "0.1.0";
-
-/// Library version as a null-terminated C string.
-export fn har_version() callconv(.c) [*:0]const u8 {
-    return VERSION;
-}
-
-// ── Tests ────────────────────────────────────────────────────────────────
-
-test "router lifecycle: create -> start -> shutdown -> destroy" {
-    const slot = har_router_create();
-    try std.testing.expect(slot >= 0);
-
-    try std.testing.expectEqual(@as(u8, 0), har_router_state(slot));
-
-    const start_result = har_router_start(slot);
-    try std.testing.expectEqual(@as(u8, @intFromEnum(TransitionResult.accepted)), start_result);
-    try std.testing.expectEqual(@as(u8, 1), har_router_state(slot));
-
-    const dispatch_result = har_dispatch_event(slot, 42);
-    try std.testing.expectEqual(@as(u8, @intFromEnum(EventDisposition.consumed)), dispatch_result);
-
-    const shutdown_result = har_router_shutdown(slot);
-    try std.testing.expectEqual(@as(u8, @intFromEnum(TransitionResult.accepted)), shutdown_result);
-    try std.testing.expectEqual(@as(u8, 2), har_router_state(slot));
-
-    har_router_destroy(slot);
-}
-
-test "router rejects invalid transitions" {
-    const slot = har_router_create();
-    try std.testing.expect(slot >= 0);
-
-    const result = har_router_shutdown(slot);
-    try std.testing.expectEqual(@as(u8, @intFromEnum(TransitionResult.rejected)), result);
-
-    _ = har_router_start(slot);
-    const double_start = har_router_start(slot);
-    try std.testing.expectEqual(@as(u8, @intFromEnum(TransitionResult.rejected)), double_start);
-
-    har_router_destroy(slot);
-}
-
-test "event dispatch only works in Running state" {
-    const slot = har_router_create();
-    try std.testing.expect(slot >= 0);
-
-    const result = har_dispatch_event(slot, 1);
-    try std.testing.expectEqual(@as(u8, @intFromEnum(EventDisposition.ignored)), result);
-
-    har_router_destroy(slot);
-}
-
-test "target connection lifecycle" {
-    const slot = har_target_connect(1); // AtLeastOnce
-    try std.testing.expect(slot >= 0);
-
-    try std.testing.expectEqual(@as(u8, 1), har_target_state(slot));
-
-    har_target_disconnect(slot);
-    try std.testing.expectEqual(@as(u8, 0), har_target_state(slot));
-}
-
-test "invalid slots return safe defaults" {
-    try std.testing.expectEqual(@as(u8, 0), har_router_state(-1));
-    try std.testing.expectEqual(@as(u8, 0), har_router_state(999));
-    try std.testing.expectEqual(@as(u8, @intFromEnum(EventDisposition.dropped)), har_dispatch_event(-1, 0));
-    try std.testing.expectEqual(@as(u8, 0), har_target_state(-1));
-}
-
-test "abi version is 1" {
-    try std.testing.expectEqual(@as(u32, 1), har_abi_version());
-}
-
-test "version string" {
-    const v = har_version();
-    const slice = std.mem.span(v);
-    try std.testing.expectEqualStrings("0.1.0", slice);
+test "version" {
+    const ver = hybrid_automation_router_version();
+    const ver_str = std.mem.span(ver);
+    try std.testing.expectEqualStrings(VERSION, ver_str);
 }

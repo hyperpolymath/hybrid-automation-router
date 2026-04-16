@@ -43,17 +43,17 @@ impl MetricsCollector {
         *self
             .strategy_counts
             .lock()
-            .unwrap()
+            .expect("TODO: handle error")
             .entry(strategy)
             .or_insert(0) += 1;
         *self
             .target_counts
             .lock()
-            .unwrap()
+            .expect("TODO: handle error")
             .entry(decision.target_id.clone())
             .or_insert(0) += 1;
 
-        let mut lat = self.latencies.lock().unwrap();
+        let mut lat = self.latencies.lock().expect("TODO: handle error");
         lat.push(latency_us);
         // Keep only last 10000 entries
         if lat.len() > 10000 {
@@ -67,7 +67,7 @@ impl MetricsCollector {
         *self
             .category_counts
             .lock()
-            .unwrap()
+            .expect("TODO: handle error")
             .entry(category.to_string())
             .or_insert(0) += 1;
     }
@@ -104,7 +104,7 @@ impl MetricsCollector {
     }
 
     pub fn avg_latency_us(&self) -> f64 {
-        let lat = self.latencies.lock().unwrap();
+        let lat = self.latencies.lock().expect("TODO: handle error");
         if lat.is_empty() {
             0.0
         } else {
@@ -113,15 +113,15 @@ impl MetricsCollector {
     }
 
     pub fn strategy_breakdown(&self) -> HashMap<String, u64> {
-        self.strategy_counts.lock().unwrap().clone()
+        self.strategy_counts.lock().expect("TODO: handle error").clone()
     }
 
     pub fn category_breakdown(&self) -> HashMap<String, u64> {
-        self.category_counts.lock().unwrap().clone()
+        self.category_counts.lock().expect("TODO: handle error").clone()
     }
 
     pub fn target_breakdown(&self) -> HashMap<String, u64> {
-        self.target_counts.lock().unwrap().clone()
+        self.target_counts.lock().expect("TODO: handle error").clone()
     }
 
     /// Take a point-in-time snapshot
@@ -144,10 +144,10 @@ impl MetricsCollector {
         self.events_routed.store(0, Ordering::Relaxed);
         self.events_dropped.store(0, Ordering::Relaxed);
         self.events_dead_lettered.store(0, Ordering::Relaxed);
-        self.strategy_counts.lock().unwrap().clear();
-        self.category_counts.lock().unwrap().clear();
-        self.target_counts.lock().unwrap().clear();
-        self.latencies.lock().unwrap().clear();
+        self.strategy_counts.lock().expect("TODO: handle error").clear();
+        self.category_counts.lock().expect("TODO: handle error").clear();
+        self.target_counts.lock().expect("TODO: handle error").clear();
+        self.latencies.lock().expect("TODO: handle error").clear();
     }
 }
 
@@ -211,7 +211,7 @@ mod tests {
         m.record_route(&test_decision(), 100);
         m.record_route(&test_decision(), 200);
         let breakdown = m.strategy_breakdown();
-        assert_eq!(*breakdown.get("CapabilityMatch").unwrap(), 2);
+        assert_eq!(*breakdown.get("CapabilityMatch").expect("TODO: handle error"), 2);
     }
 
     #[test]
@@ -221,7 +221,7 @@ mod tests {
         m.record_category("filesystem");
         let snap = m.snapshot();
         assert_eq!(snap.total_routed, 1);
-        assert_eq!(*snap.category_breakdown.get("filesystem").unwrap(), 1);
+        assert_eq!(*snap.category_breakdown.get("filesystem").expect("TODO: handle error"), 1);
     }
 
     #[test]
