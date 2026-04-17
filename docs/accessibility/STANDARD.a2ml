@@ -228,7 +228,7 @@ HAS is structured as a contractile system with three compliance levels:
 
 2. Add Adjustfile.a2ml:
    ```bash
-   cp /var/mnt/eclipse/repos/standards/accessibility/Adjustfile.a2ml \
+   cp /var/mnt/eclipse/repos/developer-ecosystem/standards/accessibility/Adjustfile.a2ml \
      .machine_readable/contractiles/adjust/
    ```
 
@@ -253,7 +253,7 @@ HAS is structured as a contractile system with three compliance levels:
 5. Document accessibility features:
    ```bash
    mkdir -p docs/accessibility
-   cp /var/mnt/eclipse/repos/standards/accessibility/README.adoc \
+   cp /var/mnt/eclipse/repos/developer-ecosystem/standards/accessibility/README.adoc \
      docs/accessibility/
    ```
 
