@@ -273,7 +273,7 @@ mod tests {
             .register_target("test", "localhost:8080", Arc::new(DefaultProbe))
             .await;
 
-        let status = checker.check_target("test").await.expect("TODO: handle error");
+        let status = checker.check_target("test").await.unwrap();
         assert_eq!(status.status, TargetStatus::Healthy);
         assert_eq!(status.consecutive_failures, 0);
     }
@@ -286,12 +286,12 @@ mod tests {
             .await;
 
         // Before any check: Unknown, no timestamp.
-        let initial = checker.get_status("tracked").await.expect("TODO: handle error");
+        let initial = checker.get_status("tracked").await.unwrap();
         assert_eq!(initial.status, TargetStatus::Unknown);
         assert!(initial.last_check.is_none());
 
         // After a check: Healthy with a timestamp and latency.
-        let after = checker.check_target("tracked").await.expect("TODO: handle error");
+        let after = checker.check_target("tracked").await.unwrap();
         assert_eq!(after.status, TargetStatus::Healthy);
         assert!(after.last_check.is_some());
         assert_eq!(after.latency_ms, Some(0));
@@ -304,14 +304,14 @@ mod tests {
             .register_target("test", "localhost:8080", Arc::new(FailingProbe))
             .await;
 
-        let s1 = checker.check_target("test").await.expect("TODO: handle error");
+        let s1 = checker.check_target("test").await.unwrap();
         assert_eq!(s1.status, TargetStatus::Degraded);
         assert_eq!(s1.consecutive_failures, 1);
 
-        let s2 = checker.check_target("test").await.expect("TODO: handle error");
+        let s2 = checker.check_target("test").await.unwrap();
         assert_eq!(s2.status, TargetStatus::Degraded);
 
-        let s3 = checker.check_target("test").await.expect("TODO: handle error");
+        let s3 = checker.check_target("test").await.unwrap();
         assert_eq!(s3.status, TargetStatus::Unhealthy);
         assert_eq!(s3.consecutive_failures, 3);
     }

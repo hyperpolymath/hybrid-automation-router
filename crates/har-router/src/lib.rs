@@ -170,7 +170,7 @@ mod tests {
             "filesystem",
         );
 
-        let decision = router.route(&event).expect("TODO: handle error");
+        let decision = router.route(&event).unwrap();
         assert_eq!(decision.target_id, "rpa-elysium");
         assert_eq!(decision.strategy, RoutingStrategy::CapabilityMatch);
     }
@@ -185,7 +185,7 @@ mod tests {
             "web",
         );
 
-        let decision = router.route(&event).expect("TODO: handle error");
+        let decision = router.route(&event).unwrap();
         assert_eq!(decision.target_id, "web-auto");
     }
 
@@ -195,7 +195,7 @@ mod tests {
         let event = AutomationEvent::new(EventSource::Manual { user: None }, "filesystem")
             .with_target_hint("web-auto");
 
-        let decision = router.route(&event).expect("TODO: handle error");
+        let decision = router.route(&event).unwrap();
         assert_eq!(decision.target_id, "web-auto");
         assert_eq!(decision.strategy, RoutingStrategy::Direct);
     }
@@ -216,7 +216,7 @@ mod tests {
         let event = AutomationEvent::new(EventSource::Manual { user: None }, "unknown")
             .with_tag("urgent-fs");
 
-        let decision = router.route(&event).expect("TODO: handle error");
+        let decision = router.route(&event).unwrap();
         assert_eq!(decision.target_id, "rpa-elysium");
         assert_eq!(decision.strategy, RoutingStrategy::TagMatch);
     }
