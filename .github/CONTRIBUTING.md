@@ -1,4 +1,4 @@
-<!-- SPDX-License-Identifier: PMPL-1.0-or-later -->
+<!-- SPDX-License-Identifier: MPL-2.0 -->
 <!-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk> -->
 
 # Contributing to hybrid-automation-router
@@ -218,4 +218,4 @@ Panel contributions should:
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under PMPL-1.0-or-later.
+By contributing, you agree that your contributions will be licensed under MPL-2.0.
