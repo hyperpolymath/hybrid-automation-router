@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 // Template: QUICKSTART-USER.adoc — 5-minute path to working software
 // Replace hybrid-automation-router, Hybrid Automation Router — See README.adoc for details., just run, Hybrid Automation Router started successfully. with actuals
 = hybrid-automation-router — Quick Start for Users

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 // SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 
 = Hybrid Automation Router Development Roadmap
@@ -65,7 +65,7 @@ The repository contains a Rust workspace with 8 crates (`har-core`, `har-config`
 |✓ Done
 
 |Licensing
-|PMPL-1.0-or-later (MPL-2.0 fallback)
+|MPL-2.0 (MPL-2.0 fallback)
 |✓ Done
 
 |Governance
@@ -409,7 +409,7 @@ See link:CONTRIBUTING.md[CONTRIBUTING.md] for guidelines.
 
 == License
 
-This roadmap and the Hybrid Automation Router project are licensed under PMPL-1.0-or-later.
+This roadmap and the Hybrid Automation Router project are licensed under MPL-2.0.
 
 ---
 

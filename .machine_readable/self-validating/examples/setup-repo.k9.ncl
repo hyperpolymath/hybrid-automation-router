@@ -1,5 +1,5 @@
 K9!
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # Example Hunt-level K9 component: Repository setup automation
 # Security Level: Hunt (full execution with Just recipes)
 # ⚠️ SIGNATURE REQUIRED - DO NOT RUN WITHOUT VERIFICATION
@@ -95,7 +95,7 @@ K9!
       commands = [
         "mkdir -p src/ docs/ tests/ scripts/",
         "mkdir -p .github/workflows/",
-        "mkdir -p .machine_readable/contractiles/k9/",
+        "mkdir -p .machine_readable/contractiles/self-validating/",
         "echo '✓ Directory structure created'",
       ],
     },

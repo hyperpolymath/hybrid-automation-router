@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # Estate SPARK Theatre Gate — thin caller of the reusable workflow in
 # hyperpolymath/standards (#135 / #141). Pinned by commit SHA per the
 # estate action-pinning policy. Regenerate the pin only when the reusable
@@ -15,7 +15,8 @@ permissions:
 
 jobs:
   spark-theatre-gate:
-    uses: hyperpolymath/standards/.github/workflows/spark-theatre-gate.yml@462003782f3ebb93ea763e81d0d199ce13ef7d73
+    uses: hyperpolymath/standards/.github/workflows/spark-theatre-gate.yml@fc7abf589b93f9a33b8af74dbfe98ba22707156f
+    timeout-minutes: 10
     with:
       paths: "."
       enforce_zero_contract: false

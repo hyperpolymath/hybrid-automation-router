@@ -1,7 +1,9 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 // SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 
 = Hybrid Automation Router (HAR)
+image:https://img.shields.io/badge/OpenSSF-Best_Practices-green?logo=openssourcesecurity[OpenSSF Best Practices,link="https://www.bestpractices.dev/en/projects/new?repo_url=https://github.com/hyperpolymath/hybrid-automation-router"]
+
 
 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 
@@ -147,7 +149,7 @@ Pre-built monitoring panels in `panels/`:
 
 == License
 
-Palimpsest License (PMPL-1.0-or-later)
+Palimpsest License (MPL-2.0)
 2026 Jonathan D.A. Jewell
 
 == Author
