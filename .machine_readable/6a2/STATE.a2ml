@@ -4,7 +4,7 @@
 [metadata]
 project = "hybrid-automation-router"
 version = "0.2.0"
-last-updated = "2026-03-17"
+last-updated = "2026-07-06"
 status = "active"
 
 [project-context]
@@ -31,14 +31,16 @@ har-health = "done"
 har-metrics = "done"
 
 [next-actions]
-priority-1 = "Implement proven-queueconn runtime integration for live target dispatch"
-priority-2 = "Add Gleam backend service for event persistence on BEAM"
-priority-3 = "Generate C headers from Idris2 ABI definitions"
-priority-4 = "Implement routing rule evaluation in Zig FFI"
-priority-5 = "Phase 2: ML-based route scoring and adaptive load balancing"
-priority-6 = "Phase 2: Circuit breakers with exponential backoff"
+# Phase 2 reprioritised to Automation Interlingua — see docs/decisions/0002.
+priority-1 = "Phase 2A: automation meta-model (har-meta) + parallel Idris2 normative spec"
+priority-2 = "Phase 2A: A2ML interchange dialect + serde round-trip"
+priority-3 = "Phase 2A: two-level IR (har-il) with lowering onto har-router/har-dispatch"
+priority-4 = "Phase 2A gate: declarative route topology -> plan -> execute -> lift, round-tripped via A2ML"
+priority-5 = "Phase 2B: Puppet-in -> A2ML -> Salt-out handoff flagship"
+priority-6 = "Complete Phase 1: proven-queueconn runtime + Gleam backend (carried forward)"
 
 [session-history]
 # 2026-03-17: Initial creation from rsr-template-repo — Rust workspace, 3 crates, PanLL panels, README
 # 2026-03-17: proven-fsm + proven-queueconn ABI bindings, Zig FFI (7 tests), Ephapax linear types, ABI-FFI-README
 # 2026-03-17: v0.2.0 — Added har-config, har-dispatch, har-health, har-metrics crates (8 total). Dispatch with retry/dead-letter, health checking with degradation, metrics with snapshots. Updated all documentation.
+# 2026-07-06: Reprioritised roadmap — Phase 2 is now the Automation Interlingua (declarative/imperative duality + cross-tool handoff, A2ML substrate). Former Advanced Routing -> Phase 3. See docs/decisions/0002. ADR + ROADMAP proposed via PR, owner ratification pending.
