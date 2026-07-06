@@ -15,8 +15,11 @@ permissions:
 
 jobs:
   spark-theatre-gate:
+    # NOTE: a reusable-workflow caller job may only set uses/with/secrets/etc.
+    # `timeout-minutes` is NOT permitted here and makes GitHub reject the whole
+    # workflow (startup_failure on every push). The timeout belongs inside the
+    # reusable workflow in hyperpolymath/standards, not on the caller.
     uses: hyperpolymath/standards/.github/workflows/spark-theatre-gate.yml@c4d24103506d9519ef87047eaabc3d5f5efaccd0
-    timeout-minutes: 10
     with:
       paths: "."
       enforce_zero_contract: false
