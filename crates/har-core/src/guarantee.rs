@@ -4,9 +4,10 @@
 
 //! Delivery guarantees — the Rust mirror of the proven-queueconn ABI tags.
 //!
-//! The tag values here MUST match the Idris2 ABI (`src/abi/ProvenQueue.idr`)
-//! and proven-servers exactly, because they cross the FFI boundary as raw
-//! bytes:
+//! This is a binding of the normative spec `abi/SHARED-QUEUE-ABI.adoc`; see
+//! [`crate::abi`] for the rest of the tag surface. The tag values here MUST
+//! match that spec, the Idris2 ABI (`src/abi/ProvenQueue.idr`), and
+//! proven-servers exactly, because they cross the FFI boundary as raw bytes:
 //!
 //! ```text
 //!   AtMostOnce  = 0

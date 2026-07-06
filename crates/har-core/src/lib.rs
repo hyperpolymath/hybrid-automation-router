@@ -15,6 +15,7 @@
 //! - [`RoutingContext`] — Contextual information for making routing decisions
 
 #![forbid(unsafe_code)]
+pub mod abi;
 pub mod error;
 pub mod event;
 pub mod guarantee;
@@ -22,6 +23,7 @@ pub mod route;
 pub mod target;
 pub mod verify;
 
+pub use abi::{MessageState, QueueError, QueueOp, QueueState, ABI_VERSION};
 pub use error::{Error, Result};
 pub use event::{AutomationEvent, EventPriority, EventSource};
 pub use guarantee::DeliveryGuarantee;

@@ -4,7 +4,15 @@
 --
 -- ProvenQueue: proven-queueconn types adapted for the Hybrid Automation Router.
 --
--- This module re-exports the proven-queueconn message queue types with
+-- This module is the *Idris2 binding* of the normative spec
+-- `abi/SHARED-QUEUE-ABI.adoc` (abi_version = 1) — NOT an independent
+-- declaration. The tag values below are pinned by that spec and MUST match it,
+-- the Rust binding (`har_core::abi`), and proven-queueconn upstream. When a
+-- value changes, it changes in the spec first and the abi_version bumps.
+-- rpa-elysium's own `ProvenQueue.idr` should be replaced by a vendored copy of
+-- this same binding rather than hand-synced (see the spec's "Adoption path").
+--
+-- The module re-exports the proven-queueconn message queue types with
 -- HAR-specific semantics.  The core proven-queueconn library defines a
 -- generic message queue connector interface; here we map those types to
 -- HAR's event dispatch pipeline:
