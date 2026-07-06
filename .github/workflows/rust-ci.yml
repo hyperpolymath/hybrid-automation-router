@@ -14,5 +14,10 @@ permissions:
 
 jobs:
   rust-ci:
-    uses: hyperpolymath/standards/.github/workflows/rust-ci-reusable.yml@c4d24103506d9519ef87047eaabc3d5f5efaccd0
-    timeout-minutes: 10
+    uses: hyperpolymath/standards/.github/workflows/rust-ci-reusable.yml@13d4f2865e361a5480d8d140c4feac332d341cca
+    timeout-minutes: 30
+    with:
+      # Owned coverage gate via the shared reusable (replaces the standalone
+      # coverage.yml). Baseline was 84.45%; ratchet the floor toward 95%.
+      enable_coverage: true
+      coverage_floor: "84"
