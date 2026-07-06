@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 // SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+// Owner: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 
 //! HAR Router — The routing engine that matches events to automation targets
 //!
@@ -11,12 +12,18 @@ use har_core::{
     AutomationEvent, AutomationTarget, Error, Result, RouteDecision, RoutingContext,
     RoutingStrategy, TargetStatus,
 };
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use tracing::{debug, info, warn};
 
 /// The main routing engine
 pub struct Router {
     context: RoutingContext,
     default_strategy: RoutingStrategy,
+    /// Rotation counter for the round-robin strategy. Interior mutability lets
+    /// `route(&self)` advance it without requiring a `&mut` receiver.
+    rr_counter: AtomicUsize,
 }
 
 impl Router {
@@ -25,6 +32,7 @@ impl Router {
         Self {
             context: RoutingContext::new(),
             default_strategy: RoutingStrategy::CapabilityMatch,
+            rr_counter: AtomicUsize::new(0),
         }
     }
 
@@ -105,24 +113,149 @@ impl Router {
             )));
         }
 
-        // Select best match by weight
-        let best = matches
-            .iter()
-            .max_by_key(|t| t.weight)
-            .expect("matches is non-empty");
+        // 4. Final selection among the matching targets, governed by the
+        //    configured strategy. Deterministic for a given (event, candidate
+        //    set, load) — never dependent on HashMap iteration order.
+        Ok(self.select(event, &matches))
+    }
 
-        let alternatives: Vec<String> = matches
+    /// Record the current pending-task load for a target (feeds `LeastLoaded`).
+    pub fn set_load(&mut self, target_id: impl Into<String>, load: usize) {
+        self.context.load.insert(target_id.into(), load);
+    }
+
+    /// Select one target from the non-empty candidate set per `default_strategy`.
+    fn select(&self, event: &AutomationEvent, candidates: &[&AutomationTarget]) -> RouteDecision {
+        let multi = candidates.len() > 1;
+        match self.default_strategy {
+            RoutingStrategy::RoundRobin => {
+                let n = candidates.len();
+                let idx = self.rr_counter.fetch_add(1, Ordering::Relaxed) % n;
+                let chosen = candidates[idx];
+                Self::decision(
+                    event,
+                    chosen,
+                    candidates,
+                    RoutingStrategy::RoundRobin,
+                    if multi { 0.7 } else { 1.0 },
+                    format!("Round-robin selection ({}/{})", idx + 1, n),
+                )
+            }
+            RoutingStrategy::LeastLoaded => {
+                let chosen = candidates
+                    .iter()
+                    .copied()
+                    .min_by(|a, b| {
+                        let la = self.context.load.get(&a.id).copied().unwrap_or(0);
+                        let lb = self.context.load.get(&b.id).copied().unwrap_or(0);
+                        la.cmp(&lb)
+                            .then(b.weight.cmp(&a.weight))
+                            .then(a.id.cmp(&b.id))
+                    })
+                    .expect("candidates non-empty");
+                let load = self.context.load.get(&chosen.id).copied().unwrap_or(0);
+                Self::decision(
+                    event,
+                    chosen,
+                    candidates,
+                    RoutingStrategy::LeastLoaded,
+                    if multi { 0.85 } else { 1.0 },
+                    format!("Least-loaded target ({load} pending)"),
+                )
+            }
+            RoutingStrategy::WeightedRandom => {
+                let chosen = Self::weighted_pick(event, candidates);
+                Self::decision(
+                    event,
+                    chosen,
+                    candidates,
+                    RoutingStrategy::WeightedRandom,
+                    if multi { 0.75 } else { 1.0 },
+                    "Weighted-random selection (deterministic by event id)".to_string(),
+                )
+            }
+            RoutingStrategy::Failover => {
+                let mut ordered = candidates.to_vec();
+                ordered.sort_by(|a, b| b.weight.cmp(&a.weight).then(a.id.cmp(&b.id)));
+                let primary = ordered[0];
+                let alternatives = ordered[1..].iter().map(|t| t.id.clone()).collect();
+                RouteDecision {
+                    event_id: event.id.clone(),
+                    target_id: primary.id.clone(),
+                    strategy: RoutingStrategy::Failover,
+                    confidence: if multi { 0.9 } else { 1.0 },
+                    alternatives,
+                    reason: "Failover: primary target with ordered fallback chain".to_string(),
+                }
+            }
+            // Direct / TagMatch / CapabilityMatch: event-triggered forms are
+            // handled earlier in `route`; as a final selector they resolve to
+            // highest weight (ties broken by id for a deterministic result).
+            _ => {
+                let chosen = candidates
+                    .iter()
+                    .copied()
+                    .min_by(|a, b| b.weight.cmp(&a.weight).then(a.id.cmp(&b.id)))
+                    .expect("candidates non-empty");
+                let confidence = if multi { 0.8 } else { 1.0 };
+                Self::decision(
+                    event,
+                    chosen,
+                    candidates,
+                    RoutingStrategy::CapabilityMatch,
+                    confidence,
+                    format!(
+                        "Matched by capability (confidence: {:.0}%)",
+                        confidence * 100.0
+                    ),
+                )
+            }
+        }
+    }
+
+    /// Build a decision, listing the non-chosen candidates as alternatives.
+    fn decision(
+        event: &AutomationEvent,
+        chosen: &AutomationTarget,
+        candidates: &[&AutomationTarget],
+        strategy: RoutingStrategy,
+        confidence: f64,
+        reason: String,
+    ) -> RouteDecision {
+        let alternatives = candidates
             .iter()
-            .filter(|t| t.id != best.id)
+            .filter(|t| t.id != chosen.id)
             .map(|t| t.id.clone())
             .collect();
+        RouteDecision {
+            event_id: event.id.clone(),
+            target_id: chosen.id.clone(),
+            strategy,
+            confidence,
+            alternatives,
+            reason,
+        }
+    }
 
-        let confidence = if matches.len() == 1 { 1.0 } else { 0.8 };
-
-        Ok(
-            RouteDecision::capability_match(&event.id, &best.id, confidence)
-                .with_alternatives(alternatives),
-        )
+    /// Weight-proportional pick, made deterministic per event by seeding from
+    /// the event id: it distributes across events in proportion to weight
+    /// without carrying RNG state, and is reproducible for tests/attestation.
+    fn weighted_pick<'a>(
+        event: &AutomationEvent,
+        candidates: &[&'a AutomationTarget],
+    ) -> &'a AutomationTarget {
+        let total: u64 = candidates.iter().map(|t| u64::from(t.weight.max(1))).sum();
+        let mut hasher = DefaultHasher::new();
+        event.id.hash(&mut hasher);
+        let mut pick = hasher.finish() % total.max(1);
+        for t in candidates {
+            let w = u64::from(t.weight.max(1));
+            if pick < w {
+                return t;
+            }
+            pick -= w;
+        }
+        candidates[candidates.len() - 1]
     }
 
     /// Get all registered targets
@@ -219,5 +352,88 @@ mod tests {
         let decision = router.route(&event).unwrap();
         assert_eq!(decision.target_id, "rpa-elysium");
         assert_eq!(decision.strategy, RoutingStrategy::TagMatch);
+    }
+
+    /// Build a router of N web-capable targets with explicit weights so the
+    /// selection strategy has a real multi-target candidate set to choose from.
+    fn router_with(strategy: RoutingStrategy, specs: &[(&str, u32)]) -> Router {
+        let mut router = Router::new().with_strategy(strategy);
+        for &(id, w) in specs {
+            let mut t = AutomationTarget::new(id, id, format!("{id}-q"));
+            t.status = TargetStatus::Healthy;
+            t.capabilities = vec![TargetCapability::WebBrowser];
+            t.weight = w;
+            router.register_target(t);
+        }
+        router
+    }
+
+    fn web_event() -> AutomationEvent {
+        AutomationEvent::new(
+            EventSource::Webhook {
+                endpoint: "/h".into(),
+            },
+            "web",
+        )
+    }
+
+    #[test]
+    fn round_robin_rotates_and_wraps() {
+        let router = router_with(
+            RoutingStrategy::RoundRobin,
+            &[("t-a", 100), ("t-b", 100), ("t-c", 100)],
+        );
+        let ev = web_event();
+        let picks: Vec<String> = (0..4)
+            .map(|_| router.route(&ev).unwrap().target_id)
+            .collect();
+        assert_eq!(picks, vec!["t-a", "t-b", "t-c", "t-a"]);
+        assert_eq!(
+            router.route(&ev).unwrap().strategy,
+            RoutingStrategy::RoundRobin
+        );
+    }
+
+    #[test]
+    fn least_loaded_picks_lowest_load() {
+        let mut router = router_with(
+            RoutingStrategy::LeastLoaded,
+            &[("t-a", 100), ("t-b", 100), ("t-c", 100)],
+        );
+        router.set_load("t-a", 5);
+        router.set_load("t-b", 1);
+        router.set_load("t-c", 3);
+        let d = router.route(&web_event()).unwrap();
+        assert_eq!(d.target_id, "t-b");
+        assert_eq!(d.strategy, RoutingStrategy::LeastLoaded);
+    }
+
+    #[test]
+    fn weighted_random_is_deterministic_and_valid() {
+        let router = router_with(
+            RoutingStrategy::WeightedRandom,
+            &[("t-a", 100), ("t-b", 100), ("t-c", 100)],
+        );
+        let ev = web_event();
+        let a = router.route(&ev).unwrap().target_id;
+        let b = router.route(&ev).unwrap().target_id;
+        assert_eq!(a, b, "the same event must route the same way");
+        assert!(["t-a", "t-b", "t-c"].contains(&a.as_str()));
+        assert_eq!(
+            router.route(&ev).unwrap().strategy,
+            RoutingStrategy::WeightedRandom
+        );
+    }
+
+    #[test]
+    fn failover_primary_and_ordered_fallback_chain() {
+        let router = router_with(
+            RoutingStrategy::Failover,
+            &[("t-a", 100), ("t-b", 300), ("t-c", 200)],
+        );
+        let d = router.route(&web_event()).unwrap();
+        assert_eq!(d.strategy, RoutingStrategy::Failover);
+        assert_eq!(d.target_id, "t-b"); // highest weight = primary
+        assert_eq!(d.alternatives, vec!["t-c", "t-a"]); // fallbacks by weight desc
     }
 }
