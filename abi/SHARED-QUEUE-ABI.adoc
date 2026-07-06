@@ -1,0 +1,241 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+// Owner: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+= Shared Queue ABI — proven-queueconn contract for HAR ↔ rpa-elysium
+:toc: macro
+:sectnums:
+:revnumber: 1
+:revdate: 2026-07-06
+
+*Status:* normative for `abi_version = 1`, owner-ratified 2026-07-06. Single
+source of truth for the proven-queueconn ABI as used between the Hybrid
+Automation Router (HAR) and its first-class target rpa-elysium. Canonical home
+for promotion: `proven-servers` / `proven-queueconn`.
+
+toc::[]
+
+== Why this document exists
+
+HAR and rpa-elysium each carried their *own* copy of the proven-queueconn ABI
+(`src/abi/ProvenQueue.idr` in each repo), hand-synced by eye. Two independently
+authored copies of a wire contract is exactly the setup that drifts silently:
+the tag bytes agree today only because someone remembered to copy them. On top
+of that the two sides never agreed a *codec* — HAR speaks
+`AutomationEvent { category, priority, payload: JSON, … }` while rpa-elysium
+speaks `RoutedEvent { kind, payload: Bytes }` — and they didn't even agree a
+queue name (`rpa-queue`/`rpa-tasks` vs `rpa-events`).
+
+This document is the *single normative source*. Every language binding
+(Idris2 `ProvenQueue.idr`, Rust `har_core::guarantee` + the wider ABI, and
+rpa-elysium's consumer) is a **binding of this spec**, not an independent
+declaration. Bindings MUST conform; conformance is machine-checked (see
+<<conformance>>). When a value must change, it changes *here first*, the
+`abi_version` is bumped, and the bindings are re-derived.
+
+== ABI version
+
+[cols="1,3"]
+|===
+| `abi_version` | `1`
+
+| Meaning
+| Any change to a tag value, the envelope layout, the receipt layout, or the
+  queue-naming scheme is a breaking change and MUST increment `abi_version`.
+  Additive, backwards-compatible header keys do not.
+|===
+
+The version is carried in-band on every envelope and receipt (see
+<<wire-codec>>) so a mismatched peer is rejected at the boundary, not
+mis-parsed.
+
+== Tag enumerations [[tags]]
+
+These are the canonical byte values. They MUST match proven-servers /
+proven-queueconn exactly, and every binding MUST reproduce them. All tags are a
+single unsigned byte (`u8` / `Bits8`).
+
+.`DeliveryGuarantee` — per-target delivery semantics
+[cols="3,1,5"]
+|===
+| Variant | Tag | Meaning
+
+| `AtMostOnce`  | `0` | Fire-and-forget. May be dropped, never duplicated.
+| `AtLeastOnce` | `1` | Never dropped, may be duplicated (target is idempotent).
+| `ExactlyOnce` | `2` | Never dropped, never duplicated. HAR's default.
+|===
+
+`ExactlyOnce` is the guarantee the routing invariants are conditioned on:
+`noEventLoss` gives the lower bound (≥1 terminal outcome) and
+`noDuplicateDispatch` gives the upper bound (`LTE n 1`). See
+`src/abi/RoutingInvariants.idr`.
+
+.`QueueOp` — operations against a target's queue
+[cols="3,1,5"]
+|===
+| Variant | Tag | Meaning
+
+| `Publish`     | `0` | Producer sends a routed event to a target.
+| `Subscribe`   | `1` | Consumer subscribes to a source.
+| `Acknowledge` | `2` | Consumer confirms successful processing.
+| `Reject`      | `3` | Consumer rejects an event (optionally for redelivery).
+| `Peek`        | `4` | Inspect the next event without consuming.
+| `Purge`       | `5` | Clear a target's outbound queue (admin).
+|===
+
+.`QueueState` — connection lifecycle to a target
+[cols="3,1,5"]
+|===
+| Variant | Tag | Meaning
+
+| `Disconnected` | `0` | No connection to the target.
+| `Connected`    | `1` | Connected, ready.
+| `Consuming`    | `2` | Actively receiving from a source.
+| `Producing`    | `3` | Actively dispatching to a target.
+| `Failed`       | `4` | Connection errored.
+|===
+
+.`MessageState` — a routed event's lifecycle
+[cols="3,1,5"]
+|===
+| Variant | Tag | Meaning
+
+| `Pending`      | `0` | Enqueued, awaiting dispatch.
+| `Delivered`    | `1` | Sent to target, awaiting ack.
+| `Acknowledged` | `2` | Target confirmed processing.
+| `Rejected`     | `3` | Target rejected the event.
+| `DeadLettered` | `4` | Exceeded retry limit → DLQ.
+| `Expired`      | `5` | TTL elapsed, discarded.
+|===
+
+.`QueueError` — dispatch error categories
+[cols="3,1,5"]
+|===
+| Variant | Tag | Meaning
+
+| `ConnectionLost`     | `0` | Connection to the target lost.
+| `QueueNotFound`      | `1` | Named queue does not exist.
+| `MessageTooLarge`    | `2` | Payload exceeds `maxEventSize`.
+| `QuotaExceeded`      | `3` | Target queue quota exceeded.
+| `AckTimeout`         | `4` | No ack within the timeout window.
+| `Unauthorized`       | `5` | Not permitted to dispatch here.
+| `SerializationError` | `6` | Payload could not be (de)serialised.
+|===
+
+== Constants
+
+[cols="2,1,4"]
+|===
+| Name | Value | Meaning
+
+| `maxEventSize`  | `1048576` | Max envelope payload, bytes (1 MiB).
+| `defaultPrefetch` | `10`    | Default consumer prefetch count.
+| `ackTimeout`    | `30`      | Default ack timeout, seconds.
+|===
+
+== Wire codec [[wire-codec]]
+
+The previous divergence (HAR's structured `AutomationEvent` vs rpa-elysium's
+opaque `RoutedEvent`) is resolved by one **envelope** that carries an opaque
+payload plus enough structured headers for routing/observability. Producers
+(HAR) fill the envelope; consumers (rpa-elysium) read the headers they need and
+treat `payload` as opaque bytes described by `content_type`.
+
+The canonical on-the-wire encoding is JSON (UTF-8), one object per message. A
+binary framing MAY be added under a future `abi_version` without changing this
+field model.
+
+.`RoutedEnvelope` (producer → consumer)
+[cols="2,1,5"]
+|===
+| Field | Type | Meaning
+
+| `abi_version`  | u32              | MUST equal `1`; peers reject a mismatch.
+| `event_id`     | string (UUIDv4)  | Stable id; the unit the invariants track.
+| `category`     | string           | Routing category (e.g. `filesystem`).
+| `priority`     | u8 (0–3)         | `low`=0, `normal`=1, `high`=2, `critical`=3.
+| `guarantee`    | u8               | `DeliveryGuarantee` tag (see <<tags>>).
+| `content_type` | string           | MIME type of `payload` (e.g. `application/json`).
+| `payload`      | bytes (base64)   | Opaque body; ≤ `maxEventSize`.
+| `headers`      | map<string,string> | Structured metadata (see below).
+| `created_at`   | string (RFC 3339)| Producer timestamp.
+|===
+
+Reserved header keys in `headers` (all optional, string-valued):
+
+* `tags` — comma-separated routing tags.
+* `target_hint` — a specific target id the producer requested.
+* `required_capabilities` — comma-separated capability slugs the target must
+  declare (mirrors HAR's `AutomationEvent.required_capabilities`).
+* `source` — origin descriptor (e.g. `filesystem:/path`, `webhook:/hook`).
+
+.`DeliveryReceipt` (consumer → producer)
+[cols="2,1,5"]
+|===
+| Field | Type | Meaning
+
+| `abi_version` | u32              | MUST equal `1`.
+| `event_id`    | string           | The `event_id` being reported on.
+| `target_id`   | string           | The consuming target.
+| `outcome`     | u8               | `MessageState` tag (`2` Acknowledged, `3` Rejected, `4` DeadLettered, …).
+| `detail`      | string           | Human-readable note (reject reason, etc.).
+| `acked_at`    | string (RFC 3339)| Consumer timestamp.
+|===
+
+== Queue naming [[naming]]
+
+One scheme replaces the ad-hoc `rpa-queue` / `rpa-tasks` / `rpa-events` names:
+
+[cols="2,4"]
+|===
+| Pattern | Use
+
+| `har.<target_id>.inbound`  | Producer → target dispatch queue.
+| `har.<target_id>.receipts` | Target → producer receipt queue.
+|===
+
+For rpa-elysium specifically the canonical queues are therefore
+`har.rpa-elysium.inbound` and `har.rpa-elysium.receipts`. Both sides MUST use
+these names; the old names are retired.
+
+== Conformance [[conformance]]
+
+A binding *conforms* to this spec at `abi_version = 1` iff:
+
+. every tag enum in <<tags>> is reproduced with the exact byte values, and the
+  tag ↔ variant mapping round-trips (`from_tag(to_tag(v)) == Some(v)`, and
+  `from_tag` returns `None` outside the defined range);
+. the `RoutedEnvelope` and `DeliveryReceipt` fields and types match
+  <<wire-codec>>, including rejecting any message whose `abi_version` ≠ 1;
+. the queue-naming scheme in <<naming>> is used.
+
+Machine-checked conformance in this repo:
+
+* *Rust binding* — `crates/har-core/src/guarantee.rs` pins the
+  `DeliveryGuarantee` tags with a round-trip test; the wider ABI tag surface and
+  its conformance test live alongside it as the Rust binding grows.
+* *Idris2 binding* — `src/abi/ProvenQueue.idr` declares the same tags; the tag
+  functions are total and the values are pinned by the doc-comments that cite
+  this spec.
+
+== Adoption path (cross-repo)
+
+This document is authored in HAR because HAR is where the contract is currently
+exercised end-to-end. To make it *shared* rather than merely *canonical-here*:
+
+. *Promote* this spec to the estate's source of truth for the tags.
+  **Decided (owner, 2026-07-06): the canonical home is `proven-servers` /
+  `proven-queueconn`** — the origin of the byte values — with `standards` as the
+  documented fallback. Once promoted, HAR and rpa-elysium both vendor/pin *this
+  file* (and the canonical Idris binding) rather than re-authoring it.
+. *rpa-elysium* replaces its independent `src/abi/ProvenQueue.idr` with a
+  vendored copy of the canonical Idris binding, adopts the `RoutedEnvelope` /
+  `DeliveryReceipt` codec (superseding its `RoutedEvent`/`LeaseReceipt` shapes),
+  and switches to the `har.rpa-elysium.*` queue names.
+. *HAR* gains a real proven-queueconn transport (replacing `InMemoryTransport`)
+  that publishes `RoutedEnvelope` to `har.rpa-elysium.inbound` and consumes
+  receipts from `har.rpa-elysium.receipts`.
+
+The `abi_version = 1` tag values, envelope/receipt codec, and queue-naming
+scheme above are **owner-ratified (2026-07-06)**. Steps 2 and 3 are cross-repo
+(they touch rpa-elysium and a transport dependency); this spec + the conformant
+HAR bindings are the single source both sides now converge on.
