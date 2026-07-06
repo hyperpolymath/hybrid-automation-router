@@ -4,6 +4,7 @@
 ; Component Readiness Grades (CRG) — Machine-readable specification
 ; Format: A2ML (AI-to-Machine Language)
 ; Standard: CRG v1.0
+name = "crg-criteria"
 
 (standard
   (name "Component Readiness Grades")

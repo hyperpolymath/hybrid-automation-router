@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: MPL-2.0
+name = "tsdm-standard"
 ---
 ### [TSDM_SPEC]
 id: "tsdm-standard"
