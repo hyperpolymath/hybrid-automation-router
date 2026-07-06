@@ -112,14 +112,20 @@ single unsigned byte (`u8` / `Bits8`).
 |===
 | Variant | Tag | Meaning
 
-| `ConnectionLost`     | `0` | Connection to the target lost.
-| `QueueNotFound`      | `1` | Named queue does not exist.
-| `MessageTooLarge`    | `2` | Payload exceeds `maxEventSize`.
-| `QuotaExceeded`      | `3` | Target queue quota exceeded.
-| `AckTimeout`         | `4` | No ack within the timeout window.
-| `Unauthorized`       | `5` | Not permitted to dispatch here.
-| `SerializationError` | `6` | Payload could not be (de)serialised.
+| `NoError`            | `0` | Success sentinel — no error. (proven-queueconn's `NONE`; the value the C ABI returns on success.)
+| `ConnectionLost`     | `1` | Connection to the target lost.
+| `QueueNotFound`      | `2` | Named queue does not exist.
+| `MessageTooLarge`    | `3` | Payload exceeds `maxEventSize`.
+| `QuotaExceeded`      | `4` | Target queue quota exceeded.
+| `AckTimeout`         | `5` | No ack within the timeout window.
+| `Unauthorized`       | `6` | Not permitted to dispatch here.
+| `SerializationError` | `7` | Payload could not be (de)serialised.
 |===
+
+NOTE: `QueueError` is `0`-sentinel + `1..7`, unlike the other tag enums which
+are `0`-based, because it mirrors the canonical proven-queueconn C ABI exactly
+(`0 = NONE` is the success return value). The other four enums are `0`-based in
+both this spec and proven-queueconn.
 
 == Constants
 

@@ -94,15 +94,19 @@ abi_enum! {
 }
 
 abi_enum! {
-    /// Dispatch error categories. Tags per `SHARED-QUEUE-ABI.adoc`.
+    /// Dispatch error categories. Tags per `SHARED-QUEUE-ABI.adoc`, which
+    /// tracks the canonical proven-queueconn layout: tag `0` is the `NoError`
+    /// success sentinel (proven-queueconn's `NONE`, returned across the C ABI
+    /// on success), and the seven real errors are `1..=7`.
     QueueError {
-        ConnectionLost = 0,
-        QueueNotFound = 1,
-        MessageTooLarge = 2,
-        QuotaExceeded = 3,
-        AckTimeout = 4,
-        Unauthorized = 5,
-        SerializationError = 6,
+        NoError = 0,
+        ConnectionLost = 1,
+        QueueNotFound = 2,
+        MessageTooLarge = 3,
+        QuotaExceeded = 4,
+        AckTimeout = 5,
+        Unauthorized = 6,
+        SerializationError = 7,
     }
 }
 
@@ -142,8 +146,9 @@ mod conformance {
         assert_eq!(MessageState::DeadLettered.to_abi_tag(), 4);
         assert_eq!(MessageState::Expired.to_abi_tag(), 5);
 
-        assert_eq!(QueueError::ConnectionLost.to_abi_tag(), 0);
-        assert_eq!(QueueError::SerializationError.to_abi_tag(), 6);
+        assert_eq!(QueueError::NoError.to_abi_tag(), 0);
+        assert_eq!(QueueError::ConnectionLost.to_abi_tag(), 1);
+        assert_eq!(QueueError::SerializationError.to_abi_tag(), 7);
 
         assert_eq!(MAX_EVENT_SIZE, 1_048_576);
         assert_eq!(DEFAULT_PREFETCH, 10);
@@ -176,13 +181,13 @@ mod conformance {
         }
         assert_eq!(MessageState::from_abi_tag(6), None);
 
-        for tag in 0u8..7 {
+        for tag in 0u8..8 {
             assert_eq!(
                 QueueError::from_abi_tag(tag).map(|v| v.to_abi_tag()),
                 Some(tag)
             );
         }
-        assert_eq!(QueueError::from_abi_tag(7), None);
+        assert_eq!(QueueError::from_abi_tag(8), None);
     }
 
     #[test]

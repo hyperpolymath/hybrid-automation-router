@@ -57,9 +57,9 @@
 --                      Producing=3, Failed=4
 --   MessageState:      Pending=0, Delivered=1, Acknowledged=2,
 --                      Rejected=3, DeadLettered=4, Expired=5
---   QueueError:        ConnectionLost=0, QueueNotFound=1, MessageTooLarge=2,
---                      QuotaExceeded=3, AckTimeout=4, Unauthorized=5,
---                      SerializationError=6
+--   QueueError:        NoError=0, ConnectionLost=1, QueueNotFound=2,
+--                      MessageTooLarge=3, QuotaExceeded=4, AckTimeout=5,
+--                      Unauthorized=6, SerializationError=7
 
 module ProvenQueue
 
@@ -260,11 +260,15 @@ tagToMessageState _ = Nothing
 ---------------------------------------------------------------------------
 
 ||| Error categories that HAR's dispatch pipeline can encounter.
-||| Tag values: ConnectionLost=0, QueueNotFound=1, MessageTooLarge=2,
-|||             QuotaExceeded=3, AckTimeout=4, Unauthorized=5,
-|||             SerializationError=6
+||| Mirrors the canonical proven-queueconn C ABI: tag 0 is the NoError success
+||| sentinel (proven-queueconn's NONE), errors are 1..7.
+||| Tag values: NoError=0, ConnectionLost=1, QueueNotFound=2, MessageTooLarge=3,
+|||             QuotaExceeded=4, AckTimeout=5, Unauthorized=6,
+|||             SerializationError=7
 public export
 data QueueError : Type where
+  ||| No error — the success sentinel the C ABI returns (proven-queueconn NONE).
+  NoError            : QueueError
   ||| The connection to the automation target was lost.
   ConnectionLost     : QueueError
   ||| The specified target queue does not exist.
@@ -282,6 +286,7 @@ data QueueError : Type where
 
 public export
 Show QueueError where
+  show NoError            = "NoError"
   show ConnectionLost     = "ConnectionLost"
   show QueueNotFound      = "QueueNotFound"
   show MessageTooLarge    = "MessageTooLarge"
@@ -290,16 +295,17 @@ Show QueueError where
   show Unauthorized       = "Unauthorized"
   show SerializationError = "SerializationError"
 
-||| Convert QueueError to C-compatible tag value.
+||| Convert QueueError to C-compatible tag value. Matches proven-queueconn.
 public export
 queueErrorToTag : QueueError -> Bits8
-queueErrorToTag ConnectionLost     = 0
-queueErrorToTag QueueNotFound      = 1
-queueErrorToTag MessageTooLarge    = 2
-queueErrorToTag QuotaExceeded      = 3
-queueErrorToTag AckTimeout         = 4
-queueErrorToTag Unauthorized       = 5
-queueErrorToTag SerializationError = 6
+queueErrorToTag NoError            = 0
+queueErrorToTag ConnectionLost     = 1
+queueErrorToTag QueueNotFound      = 2
+queueErrorToTag MessageTooLarge    = 3
+queueErrorToTag QuotaExceeded      = 4
+queueErrorToTag AckTimeout         = 5
+queueErrorToTag Unauthorized       = 6
+queueErrorToTag SerializationError = 7
 
 ---------------------------------------------------------------------------
 -- Valid queue state transitions
