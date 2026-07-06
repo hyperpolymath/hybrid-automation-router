@@ -22,3 +22,4 @@ jobs:
       # coverage.yml). Baseline was 84.45%; ratchet the floor toward 95%.
       enable_coverage: true
       coverage_floor: "84"
+    secrets: inherit
