@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 // SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+// Owner: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 //! Smoke tests for har-core (CRG C)
 //!
 //! Validates that the crate compiles and its public API is accessible.
@@ -8,7 +9,9 @@ use har_core::{Error, Result};
 
 #[test]
 fn crate_compiles_and_links() {
-    assert!(true, "har-core linked successfully");
+    // Referencing a public item proves the crate links; that this test
+    // compiles at all is the real assertion.
+    let _ = Error::Routing(String::new());
 }
 
 #[test]
@@ -22,5 +25,5 @@ fn error_type_is_debug() {
 #[test]
 fn result_alias_works() {
     let ok: Result<u32> = Ok(42);
-    assert_eq!(ok.unwrap(), 42);
+    assert!(matches!(ok, Ok(42)));
 }
