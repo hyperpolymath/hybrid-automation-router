@@ -140,6 +140,23 @@ in the ABI/FFI scaffold that currently sits decorative.
   translators. Replacement of existing tools is an optional, emergent
   consequence, never a precondition.
 
+### Scope and the replacement question (decided)
+
+Active scope is **2A and 2B**: HAR's own declarative/imperative capability and
+cross-tool handoff/federation. **Replacement** of incumbent tools is explicitly
+**out of scope** for this open project and will not be pursued speculatively.
+Rationale (owner, 2026-07-06): the ecosystem fight is not worth taking on
+unfunded, and any full realisation is more likely to happen as a commercial
+target within one of the incumbent vendors than as a solo open-source campaign.
+
+The replacement track is therefore **parked and sponsor/contributor-gated**:
+
+- It will be revisited only if a sponsor funds it, or a contributor takes it on.
+- Until then the foundation sits here, usable by anyone under the project's
+  licence (MPL-2.0 for code); the door is explicitly left open.
+- This posture is scoped to the *replacement* ambition **only**. The project
+  itself and its 2A/2B tracks remain **active**, not dormant.
+
 ### Roadmap impact
 
 Per the reprioritisation decision, this becomes the new **Phase 2**. The
@@ -183,5 +200,7 @@ the IR lowers onto.
   away.
 - Naming of the interlingua / router language is deferred to a follow-up
   owner decision (working name: "automation interlingua").
-- Whether replacement of existing tools ever becomes a first-class goal is
-  left open; it is explicitly not a precondition for value.
+- Replacement of incumbent tools is decided out-of-scope and
+  sponsor/contributor-gated (see "Scope and the replacement question"); the
+  open foundation remains usable under the project licence. This scoping
+  applies to the replacement ambition only — the project stays active.
