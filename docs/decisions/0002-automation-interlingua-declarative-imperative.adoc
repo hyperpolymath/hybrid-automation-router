@@ -1,0 +1,187 @@
+= Architecture Decision Record: 0002-automation-interlingua-declarative-imperative
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk> -->
+<!-- Owner: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk> -->
+
+# 2. Automation Interlingua — Declarative/Imperative Duality and Cross-Tool Handoff
+
+Date: 2026-07-06
+
+## Status
+
+Proposed (owner ratification pending)
+
+## Context
+
+HAR today is, in effect, an *imperative execution backend*: `har-router`
+selects targets by strategy and `har-dispatch` runs the dispatch with retry
+and dead-letter handling. It takes actions and delivers them. It has no way to
+accept a *declarative* description of desired routing state, nor to translate
+between the two paradigms.
+
+Two problems motivate a larger direction.
+
+### Problem 1 (acute, near-term): HAR has no declarative/imperative duality of its own
+
+The automation world is split between two control paradigms:
+
+- **Declarative** — describe the desired end-state (Terraform HCL, Puppet
+  catalogs, declarative Ansible, Salt states, Nix). Convergence-based,
+  idempotent, order-inferred.
+- **Imperative** — describe the ordered sequence of actions (Ansible task
+  lists, Salt orchestrate, shell, HAR's current dispatch). Order-sensitive.
+
+HAR can only do the imperative half. It cannot take "here is the routing
+topology I want" and compute the plan to realise it, nor infer the converged
+end-state from a sequence of dispatches. This is the *most acute* gap: until
+HAR can do declarative<->imperative translation **on its own routing domain,
+standalone**, it cannot credibly do it for anything else.
+
+### Problem 2 (second, longer-term): heterogeneous automation estates do not join up
+
+Real organisations run a bit of Puppet here, a bit of Salt there, some
+Terraform, some Ansible — islands that do not interoperate. The goal is **not
+to replace** these tools (though replacement may become an eventual, optional
+consequence) but to **join up the fragments**: hand a partially-realised
+estate off from one tool to another (Puppet in, Salt out), resume it
+elsewhere, and present the whole as one coherent, federated view with HAR as
+the seam.
+
+### What kind of artefact is this?
+
+Three candidate framings were considered, and they resolve at different
+altitudes rather than competing:
+
+- An **intermediate representation (IR)** — transient, single-owner,
+  execution-oriented, internal to a compiler. This describes HAR *executing*
+  the representation directly.
+- An **interlingua / interchange format** — persistent, tool-neutral,
+  multi-owner; independent systems read and write it to exchange meaning. This
+  describes the *handoff and federation* role.
+- A **meta-language** — a language for describing *other* languages/systems.
+  This describes the *schema*: a tool-neutral meta-model of automation onto
+  which each tool's concepts are mapped.
+
+The conclusion: it is **an interlingua, whose schema is a meta-model of
+automation, carried on A2ML, that doubles as an execution IR when HAR runs it
+natively.** All three framings are facets of one artefact.
+
+## Decision
+
+Adopt a staged programme to give HAR (1) its own declarative/imperative
+capability, then (2) cross-tool handoff and federation, converging on (3) a
+lingua franca for automation control. The carrier substrate is **A2ML**.
+
+### The core artefacts
+
+1. **The automation meta-model** — a tool-neutral ontology of automation
+   concepts: `Resource`, `Effect`, `Dependency` (`before`/`require`/`notify`),
+   `State` (desired / observed / realised), `Owner`, `Provider`,
+   `HandoffBoundary`, `Provenance`. This is the "meta-language". Each external
+   tool's front-end maps its own concepts onto this meta-model.
+
+2. **A2ML interchange dialect** — an A2ML schema that carries the meta-model.
+   NOTE: A2ML today is a *metadata / state-checkpoint* format (STATE.a2ml,
+   META.a2ml). Using it as an *active interchange and plan carrier* is a new
+   role and requires a dedicated dialect/schema, not reuse of existing
+   conventions as-is.
+
+3. **The two-level IR** —
+   - *High level (declarative):* an effect/resource graph — nodes are desired
+     resources/routes with attributes; edges are dependencies.
+   - *Low level (imperative):* a plan — a partially-ordered list of idempotent
+     primitive ops (create/update/delete/dispatch/notify) with pre/post
+     conditions.
+   - **Lowering** (graph -> plan) is the `terraform plan` move: build the DAG,
+     topologically sort, emit the apply plan. HAR's existing engine executes
+     it.
+   - **Lifting** (plan -> graph) is the inverse: infer converged desired-state
+     from an action sequence. Lossy; requires a per-op effect model.
+
+4. **Provenance & handoff engine** — because handoff/resume make provenance
+   load-bearing, every resource/effect carries *who owns it now* and *its
+   realisation status* (`declared -> planned -> realised -> handed-off`).
+   Handoff is a **linear ownership transfer with a checkpoint**. This is where
+   the currently-unwired formal stack earns its place:
+   - **Ephapax linear/affine types** (`src/abi/LinearRouting.eph`) guarantee
+     exactly-once ownership — no two tools double-apply the same resource
+     across a handoff.
+   - **proven-FSM** (`src/abi/ProvenFSM.idr`) governs the per-resource
+     lifecycle.
+   - **Idris2 invariants** (`RoutingInvariants.idr`) carry idempotence and
+     convergence proofs.
+
+### Formalisation strategy: parallel tracks
+
+The Rust IR (for execution) and an Idris2 specification of the meta-model (as
+the normative reference) are developed **alongside each other and kept in
+sync**. The Rust model is the executable artefact; the Idris2 spec is the
+source of truth for the meta-model's shape and invariants. This finally wires
+in the ABI/FFI scaffold that currently sits decorative.
+
+### Sequencing (risk-ordered)
+
+- **2A first — HAR's own declarative/imperative core.** Meta-model + A2ML
+  dialect + two-level IR + lowering/lifting, proven end-to-end **on HAR's own
+  routing domain with no external tool involved**: a declarative route
+  topology -> plan -> execute -> lift back to declarative, round-tripping
+  through A2ML. This is the acute problem and the de-risking gate for
+  everything after it.
+- **2B second — external tool adapters and federation.** Front-ends (tool ->
+  IR) and back-ends (IR -> tool or direct execution). Flagship demo:
+  **Puppet-in -> A2ML -> Salt-out** with a partially-realised estate handed
+  off and resumed. Thin Terraform front-end + Ansible slice prove the IR is
+  genuinely bidirectional (per the "both, minimal slice" decision). Federation
+  view stitches fragments from multiple tools into one graph with
+  overlap/conflict detection on ownership boundaries.
+- **Long-term — lingua franca.** With 2A+2B mature, HAR's own surface router
+  language (human-authored syntax over the meta-model, A2ML-backed) becomes
+  the lingua franca; `N` front-ends + `M` back-ends replace `N x M` point
+  translators. Replacement of existing tools is an optional, emergent
+  consequence, never a precondition.
+
+### Roadmap impact
+
+Per the reprioritisation decision, this becomes the new **Phase 2**. The
+former Phase 2 (advanced routing — ML scoring, adaptive load balancing,
+circuit breakers) moves to Phase 3, and subsequent phases renumber. Advanced
+routing is reframed as a *strategy concern within* the execution backend that
+the IR lowers onto.
+
+## Consequences
+
+### Positive
+
+- HAR gains a genuine declarative surface, not just imperative dispatch.
+- The formal-methods stack (Ephapax, proven-FSM, Idris2) stops being
+  decorative and becomes load-bearing exactly where it is strongest
+  (exactly-once ownership, lifecycle, invariants).
+- The federation/handoff value proposition ("join up what you already have")
+  is differentiated from every "yet another IaC tool" — it does not demand
+  migration.
+- A2ML gets a second, higher-value role as an interchange substrate, deepening
+  estate coherence.
+- Risk is ordered correctly: the duality is proven on HAR's own simple domain
+  before being claimed as universal.
+
+### Negative
+
+- Large scope expansion; Phase 2 as reprioritised delays advanced routing.
+- Lifting (imperative -> declarative) is genuinely hard and lossy; the effect
+  model per operation is open research, not just engineering.
+- A2ML-as-interchange is an unproven role for the format; the dialect design
+  is a real cost and a potential source of estate-wide churn.
+- Keeping the Rust IR and Idris2 spec in sync is ongoing discipline, not a
+  one-off.
+- Each external tool front-end/back-end is a substantial, independently
+  maintained surface with its own version-drift exposure.
+
+### Neutral
+
+- The existing crates (`har-core`, `har-router`, `har-dispatch`, etc.) are
+  retained as the execution backend the IR lowers onto; nothing is thrown
+  away.
+- Naming of the interlingua / router language is deferred to a follow-up
+  owner decision (working name: "automation interlingua").
+- Whether replacement of existing tools ever becomes a first-class goal is
+  left open; it is explicitly not a precondition for value.

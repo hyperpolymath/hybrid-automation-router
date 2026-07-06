@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: CC-BY-SA-4.0
 // SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+// Owner: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 
 = Hybrid Automation Router Development Roadmap
 :toc: macro
@@ -24,7 +25,13 @@ toc::[]
 |*Phase 1*
 |Core Framework
 |⚙ *IN PROGRESS*
+
+|*Phase 2*
+|Automation Interlingua (declarative/imperative + cross-tool handoff)
+|◆ *PLANNED — new north star*
 |===
+
+NOTE: Phase 2 was reprioritised (see link:docs/decisions/0002-automation-interlingua-declarative-imperative.adoc[ADR-0002]). The former "Advanced Routing" phase is now Phase 3, and subsequent phases renumber accordingly.
 
 The repository contains a Rust workspace with 8 crates (`har-core`, `har-config`, `har-dispatch`, `har-health`, `har-metrics`, `har-router`, `har-cli`, plus the Gleam backend service), ABI/FFI scaffolding (Idris2 + Zig), proven-servers bindings, Ephapax linear types, and PanLL monitoring panels.
 
@@ -202,13 +209,117 @@ Build the routing engine in Rust that dispatches automation events from sources 
 
 ---
 
-== Phase 2: Advanced Routing
+== Phase 2: Automation Interlingua
+
+*Status*: Planned (new north star — see link:docs/decisions/0002-automation-interlingua-declarative-imperative.adoc[ADR-0002])
+
+=== Objective
+
+Give HAR the ability to translate between *declarative* control (describe the
+desired routing state) and *imperative* control (the ordered dispatch it
+already runs), then generalise that duality into a tool-neutral **interlingua**
+that lets heterogeneous automation estates (Puppet, Salt, Terraform, Ansible)
+hand off and resume across each other — joining up fragments rather than
+replacing them. The interchange substrate is **A2ML**.
+
+=== Framing
+
+It is *an interlingua, whose schema is a meta-model of automation, carried on
+A2ML, that doubles as an execution IR when HAR runs it natively.* The long-term
+payoff is a lingua franca for automation control; the acute near-term problem
+is HAR's own declarative/imperative capability, which must be proven standalone
+first.
+
+=== Core artefacts
+
+[%autowidth]
+|===
+|Artefact |Description
+
+|Automation meta-model
+|Tool-neutral ontology: Resource, Effect, Dependency, State (desired/observed/realised), Owner, Provider, HandoffBoundary, Provenance
+
+|A2ML interchange dialect
+|New A2ML schema carrying the meta-model (distinct from A2ML's existing metadata/state-checkpoint role)
+
+|Two-level IR
+|High-level declarative effect/resource graph + low-level imperative plan; *lowering* = graph->plan, *lifting* = plan->graph
+
+|Provenance & handoff engine
+|Linear ownership (Ephapax) + per-resource lifecycle (proven-FSM) + convergence invariants (Idris2); handoff = linear ownership transfer with checkpoint
+|===
+
+=== Sequencing (risk-ordered)
+
+==== 2A — HAR's own declarative/imperative core (FIRST, acute)
+
+[%autowidth]
+|===
+|Task |Description |Status
+
+|`har-meta`
+|Automation meta-model as Rust types + parallel Idris2 normative spec
+|☐ Pending
+
+|A2ML interchange dialect
+|Schema + serde round-trip for the meta-model
+|☐ Pending
+
+|`har-il` (two-level IR)
+|Effect graph + plan; lowering reuses `har-router`/`har-dispatch` as executor
+|☐ Pending
+
+|Lifting (imperative->declarative)
+|Per-op effect model to infer converged desired-state
+|☐ Pending
+|===
+
+==== 2B — External tool adapters & federation (SECOND)
+
+[%autowidth]
+|===
+|Task |Description |Status
+
+|Puppet front-end + Salt back-end
+|Flagship handoff demo: Puppet-in -> A2ML -> Salt-out, partial estate handed off and resumed
+|☐ Pending
+
+|Terraform front-end + Ansible slice
+|Minimal bidirectional proof (declarative + imperative sources)
+|☐ Pending
+
+|Federation view
+|Stitch fragments from multiple tools into one graph; overlap/conflict detection on ownership boundaries
+|☐ Pending
+|===
+
+==== Long-term — Lingua franca
+
+Human-authored surface router language over the meta-model (A2ML-backed);
+`N` front-ends + `M` back-ends replace `N x M` point translators. Replacement
+of existing tools is an optional, emergent consequence — never a precondition.
+
+=== Acceptance Criteria
+
+* [ ] *(2A gate)* A declarative route topology lowers to a plan, executes, and
+  lifts back to an equivalent declarative topology — round-tripping through
+  A2ML, entirely within HAR, no external tool
+* [ ] Ephapax linear types reject any double-apply of a resource across a handoff
+* [ ] *(2B flagship)* A partially-realised Puppet catalog is imported, handed
+  off via A2ML, and resumed as Salt states without double-application
+* [ ] A Terraform (declarative) and an Ansible (imperative) source both import
+  to the same IR and re-export losslessly for the covered subset
+* [ ] Federation view detects an overlapping-ownership conflict between two tools
+
+---
+
+== Phase 3: Advanced Routing
 
 *Status*: Planned
 
 === Objective
 
-Add intelligent routing capabilities — ML-based scoring, adaptive load balancing, circuit breakers, and multi-strategy composition.
+Add intelligent routing capabilities — ML-based scoring, adaptive load balancing, circuit breakers, and multi-strategy composition. Reframed as strategy concerns *within* the execution backend that the Phase 2 IR lowers onto.
 
 === Deliverables
 
@@ -241,7 +352,7 @@ Add intelligent routing capabilities — ML-based scoring, adaptive load balanci
 
 ---
 
-== Phase 3: Observability
+== Phase 4: Observability
 
 *Status*: Planned
 
@@ -277,7 +388,7 @@ Instrument the router with metrics, distributed tracing, and alerting — feedin
 
 ---
 
-== Phase 4: Target Ecosystem
+== Phase 5: Target Ecosystem
 
 *Status*: Planned
 
@@ -313,7 +424,7 @@ Implement concrete automation targets that the router dispatches to.
 
 ---
 
-== Phase 5: Enterprise
+== Phase 6: Enterprise
 
 *Status*: Future
 
