@@ -43,7 +43,7 @@ If you cannot use GitHub Security Advisories, you may email us directly:
 
 | | |
 |---|---|
-| **Email** | security@hyperpolymath.org |
+| **Email** | j.d.a.jewell@open.ac.uk |
 
 ---
 
