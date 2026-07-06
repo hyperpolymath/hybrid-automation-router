@@ -15,9 +15,9 @@ Tracker for proof obligations against the routing-core invariants
 
 | ID | Statement | Status | Notes |
 |----|-----------|--------|-------|
-| RI-1 | `noEventLoss` — at quiescence every accepted event is Delivered or DeadLettered | STUB | Holes: `noEventLoss_rhs`. Depends on a faithful model of the dispatcher loop in Idris2; today only the *type* is checked. |
-| RI-2 | `noDuplicateDispatch` — ExactlyOnce events deliver at most once | STUB | Holes: `noDuplicateDispatch_rhs`. Needs DeliveryGuarantee-conditioned variant for AtLeastOnce / AtMostOnce. |
-| RI-3 | `deterministicSelection` — same snapshot ⇒ same target | **CLOSED** | Trivial by `Refl`; the actual content is the Rust-side property test (see RR-3 below) that the snapshot type *cannot* depend on HashMap iteration order. |
+| RI-1 | `noEventLoss` — at quiescence every accepted event is Delivered or DeadLettered | **CLOSED** | Machine-checked (2026-07-06), zero holes, `%default total`. Conditional on the `processed` premise (proven-queueconn dead-letter termination) — REUSED, not re-proved. Proof via `appearsResolvedAtQuiescence`. |
+| RI-2 | `noDuplicateDispatch` — ExactlyOnce events deliver at most once | **CLOSED** | Machine-checked (2026-07-06), zero holes. Statement strengthened from "a count exists" to `LTE n 1`. Conditional on the `LinearIn` premise (Ephapax linear-token discipline) — REUSED, not re-proved. Helper: `noDeliverZeroCount`. AtLeastOnce/AtMostOnce variants remain future work (bound is the ExactlyOnce upper half). |
+| RI-3 | `deterministicSelection` + `selectionSound` — same inputs ⇒ same target, and the target is always a candidate | **CLOSED** | Machine-checked (2026-07-06). Upgraded from vacuous `Refl`: selection is now modelled as a concrete list-fold (`selectFold`/`pickMax`), so determinism holds *by construction* (no HashMap order to leak), and `selectionSound` proves the chosen target ∈ candidates for ANY tie-break. RR-3 below is the Rust-side echo of the same property. |
 
 ## Rust runtime obligations (property tests)
 
