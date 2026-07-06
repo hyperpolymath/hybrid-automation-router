@@ -627,13 +627,9 @@ ci: deps quality
 # Install git hooks
 install-hooks:
     @mkdir -p .git/hooks
-    @cat > .git/hooks/pre-commit << 'HOOKEOF'
-    #!/bin/bash
-    just fmt-check || exit 1
-    just lint || exit 1
-    HOOKEOF
+    @cp hooks/pre-commit .git/hooks/pre-commit
     @chmod +x .git/hooks/pre-commit
-    @echo "Git hooks installed"
+    @echo "Git hooks installed (fmt + lint + lenient header check; see AGENT-HEADERS.md)"
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # SECURITY

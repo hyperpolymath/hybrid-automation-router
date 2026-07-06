@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: MPL-2.0
+# HAR pre-commit hook — version-controlled. Install via `just install-hooks`.
+# Header policy is documented in AGENT-HEADERS.md. This header check is LENIENT:
+# it accepts the estate 'Jonathan D.A. Jewell (hyperpolymath) <...>' copyright
+# form directly, unlike the older strict estate-seeded hook that demanded the
+# exact literal without the parenthetical (see issue #51).
+set -uo pipefail
+
+# Format + lint gates.
+just fmt-check || exit 1
+just lint || exit 1
+
+# Lenient header check on staged source files: require an SPDX licence line and
+# the owner name. Substring match, so both the plain and '(hyperpolymath)' forms
+# pass.
+fail=0
+while IFS= read -r f; do
+  case "$f" in
+    *.rs|*.zig|*.ex|*.idr|*.eph|*.py|*.js|*.ts|*.c|*.h|*.adoc|*.md) ;;
+    *) continue ;;
+  esac
+  [ -f "$f" ] || continue
+  grep -q 'SPDX-License-Identifier:' "$f" \
+    || { echo "ERROR: $f missing SPDX-License-Identifier (see AGENT-HEADERS.md)"; fail=1; }
+  grep -q 'Jonathan D.A. Jewell' "$f" \
+    || { echo "ERROR: $f missing owner 'Jonathan D.A. Jewell' (see AGENT-HEADERS.md)"; fail=1; }
+done < <(git diff --cached --name-only --diff-filter=ACM)
+exit "$fail"
