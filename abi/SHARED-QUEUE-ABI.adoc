@@ -7,9 +7,10 @@
 :revnumber: 1
 :revdate: 2026-07-06
 
-*Status:* normative for `abi_version = 1`. Single source of truth for the
-proven-queueconn ABI as used between the Hybrid Automation Router (HAR) and its
-first-class target rpa-elysium.
+*Status:* normative for `abi_version = 1`, owner-ratified 2026-07-06. Single
+source of truth for the proven-queueconn ABI as used between the Hybrid
+Automation Router (HAR) and its first-class target rpa-elysium. Canonical home
+for promotion: `proven-servers` / `proven-queueconn`.
 
 toc::[]
 
@@ -221,11 +222,11 @@ Machine-checked conformance in this repo:
 This document is authored in HAR because HAR is where the contract is currently
 exercised end-to-end. To make it *shared* rather than merely *canonical-here*:
 
-. *Promote* this spec to the estate's source of truth for the tags —
-  `proven-servers` / `proven-queueconn` (the origin of the byte values) is the
-  natural home; `standards` is the fallback. Owner decision required on the
-  canonical home. Once promoted, HAR and rpa-elysium both vendor/pin *this file*
-  rather than re-authoring it.
+. *Promote* this spec to the estate's source of truth for the tags.
+  **Decided (owner, 2026-07-06): the canonical home is `proven-servers` /
+  `proven-queueconn`** — the origin of the byte values — with `standards` as the
+  documented fallback. Once promoted, HAR and rpa-elysium both vendor/pin *this
+  file* (and the canonical Idris binding) rather than re-authoring it.
 . *rpa-elysium* replaces its independent `src/abi/ProvenQueue.idr` with a
   vendored copy of the canonical Idris binding, adopts the `RoutedEnvelope` /
   `DeliveryReceipt` codec (superseding its `RoutedEvent`/`LeaseReceipt` shapes),
@@ -234,7 +235,7 @@ exercised end-to-end. To make it *shared* rather than merely *canonical-here*:
   that publishes `RoutedEnvelope` to `har.rpa-elysium.inbound` and consumes
   receipts from `har.rpa-elysium.receipts`.
 
-Steps 2 and 3 are cross-repo and owner-gated (they touch rpa-elysium and a
-transport dependency). Step 1 is the decision that unblocks them. Until then,
-this spec + the conformant HAR bindings are the single source that both sides
-converge on.
+The `abi_version = 1` tag values, envelope/receipt codec, and queue-naming
+scheme above are **owner-ratified (2026-07-06)**. Steps 2 and 3 are cross-repo
+(they touch rpa-elysium and a transport dependency); this spec + the conformant
+HAR bindings are the single source both sides now converge on.
