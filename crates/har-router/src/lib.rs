@@ -9,8 +9,8 @@
 
 #![forbid(unsafe_code)]
 use har_core::{
-    AutomationEvent, AutomationTarget, Error, Result, RouteDecision, RoutingContext,
-    RoutingStrategy, TargetStatus,
+    AllowAll, AutomationEvent, AutomationTarget, CapabilityVerifier, Error, Result, RouteDecision,
+    RoutingContext, RoutingStrategy, TargetStatus,
 };
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
@@ -24,6 +24,10 @@ pub struct Router {
     /// Rotation counter for the round-robin strategy. Interior mutability lets
     /// `route(&self)` advance it without requiring a `&mut` receiver.
     rr_counter: AtomicUsize,
+    /// Pluggable policy gate applied to capability-matched candidates. Defaults
+    /// to [`AllowAll`] (veto nothing), so capability-aware routing reduces to
+    /// the structural intersection unless a stricter policy is installed.
+    verifier: Box<dyn CapabilityVerifier>,
 }
 
 impl Router {
@@ -33,6 +37,7 @@ impl Router {
             context: RoutingContext::new(),
             default_strategy: RoutingStrategy::CapabilityMatch,
             rr_counter: AtomicUsize::new(0),
+            verifier: Box::new(AllowAll),
         }
     }
 
@@ -50,6 +55,14 @@ impl Router {
     /// Set the default routing strategy
     pub fn with_strategy(mut self, strategy: RoutingStrategy) -> Self {
         self.default_strategy = strategy;
+        self
+    }
+
+    /// Install a capability-verification policy. Applied to the capability-
+    /// matched candidate set, after the structural intersection and before
+    /// strategy selection. The default is [`AllowAll`].
+    pub fn with_verifier(mut self, verifier: Box<dyn CapabilityVerifier>) -> Self {
+        self.verifier = verifier;
         self
     }
 
@@ -104,12 +117,24 @@ impl Router {
             }
         }
 
-        // 3. Capability-based matching
-        let matches = self.context.find_matching_targets(event);
+        // 3. Capability-based matching. `find_matching_targets` already
+        //    applies the structural capability intersection (a target must
+        //    declare every `required_capabilities` entry); here we additionally
+        //    apply the pluggable policy verifier, which may veto otherwise-
+        //    eligible targets (e.g. an unauthorised caller for a privileged
+        //    capability).
+        let matches: Vec<&AutomationTarget> = self
+            .context
+            .find_matching_targets(event)
+            .into_iter()
+            .filter(|t| self.verifier.verify(event, t))
+            .collect();
         if matches.is_empty() {
             return Err(Error::NoTarget(format!(
-                "No target can handle category '{}'",
-                event.category
+                "No target can handle category '{}' with required capabilities {:?} (policy: {})",
+                event.category,
+                event.required_capabilities,
+                self.verifier.name()
             )));
         }
 
