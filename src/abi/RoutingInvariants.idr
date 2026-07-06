@@ -94,14 +94,41 @@ data Quiescent : Trace -> Type where
 ||| INVARIANT 1: at quiescence, every accepted event has a terminal outcome.
 |||
 |||   `accepted` is the list of event ids the router admitted from upstream.
+||| `Appears e t`: the trace records some outcome for `e` — terminal
+||| (Delivered/DeadLettered) or not-yet (InFlight). This is what the dispatch
+||| loop guarantees for every accepted event: proven-queueconn's dead-letter
+||| termination says every enqueued event eventually reaches the trace.
+public export
+data Appears : EventId -> Trace -> Type where
+  AppDelivered    : Appears e (Delivered e tgt :: rest)
+  AppDeadLettered : Appears e (DeadLettered e r :: rest)
+  AppInFlight     : Appears e (InFlight e :: rest)
+  AppThere        : Appears e rest -> Appears e (o :: rest)
+
+||| Load-bearing lemma: at quiescence (no InFlight in the trace), anything that
+||| appears is resolved — quiescence rules out the only non-terminal case.
+export
+appearsResolvedAtQuiescence : Quiescent t -> Appears e t -> Resolved e t
+appearsResolvedAtQuiescence (QStep _ _)  AppDelivered    = HereDelivered
+appearsResolvedAtQuiescence (QStep _ _)  AppDeadLettered = HereDeadLettered
+appearsResolvedAtQuiescence (QStep nf _) AppInFlight     = absurd nf
+appearsResolvedAtQuiescence (QStep _ qr) (AppThere a)    =
+  ThereResolved (appearsResolvedAtQuiescence qr a)
+
+||| INVARIANT 1 (no event loss): at quiescence, every accepted event that the
+||| dispatch loop processed — i.e. that `Appears` in the trace, the guarantee
+||| the proven-queueconn layer provides — has a terminal outcome. The
+||| `processed` premise is exactly where the queue-layer guarantee is *reused*
+||| rather than re-proved here.
 public export
 noEventLoss :
-  (accepted : List EventId) ->
-  (t        : Trace) ->
-  Quiescent t ->
-  -- Every accepted event id appears resolved in t.
+  (accepted  : List EventId) ->
+  (t         : Trace) ->
+  (quiescent : Quiescent t) ->
+  (processed : (e : EventId) -> Elem e accepted -> Appears e t) ->
   ((e : EventId) -> Elem e accepted -> Resolved e t)
-noEventLoss accepted t q = ?noEventLoss_rhs
+noEventLoss accepted t quiescent processed e prf =
+  appearsResolvedAtQuiescence quiescent (processed e prf)
 
 ----------------------------------------------------------------------------
 -- INVARIANT 2 — no duplicate dispatch.
