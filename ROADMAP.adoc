@@ -33,7 +33,7 @@ toc::[]
 
 NOTE: Phase 2 was reprioritised (see link:docs/decisions/0002-automation-interlingua-declarative-imperative.adoc[ADR-0002]). The former "Advanced Routing" phase is now Phase 3, and subsequent phases renumber accordingly.
 
-The repository contains a Rust workspace with 8 crates (`har-core`, `har-config`, `har-dispatch`, `har-health`, `har-metrics`, `har-router`, `har-cli`, plus the Gleam backend service), ABI/FFI scaffolding (Idris2 + Zig), proven-servers bindings, Ephapax linear types, and PanLL monitoring panels.
+The repository contains a Rust workspace with 7 crates (`har-core`, `har-config`, `har-dispatch`, `har-health`, `har-metrics`, `har-router`, `har-cli`) plus ABI/FFI *scaffold* (Idris2 + Zig — type stubs, not yet compiled or wired) and an Ephapax linear-types spec. A Gleam backend service and PanLL monitoring panels are planned but not yet present.
 
 ---
 
@@ -145,16 +145,16 @@ Build the routing engine in Rust that dispatches automation events from sources 
 |Component |Description |Status
 
 |proven-servers bindings
-|FSM lifecycle and queueconn dispatch
-|✓ Done
+|Idris2 ABI type stubs (`src/abi/`) — not yet compiled as a package or wired to Rust
+|⚠ Scaffold
 
 |PanLL panels
-|`panels/har-dashboard`, `panels/rpa-elysium`
-|✓ Done
+|`panels/har-dashboard`, `panels/rpa-elysium` — directories do not exist yet
+|☐ Planned
 
 |Gleam backend service
-|`services/src/` — backend scaffold
-|✓ Scaffold
+|`services/` — directory does not exist yet
+|☐ Planned
 |===
 
 ==== 1.4 Configuration & Dispatch ✓
