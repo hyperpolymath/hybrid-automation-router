@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: MPL-2.0
 // SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+// Owner: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 
 //! Automation events that flow through the router
 //!
 //! Events are the primary input to the routing engine. They carry enough
 //! context for the router to decide which automation target should handle them.
 
+use crate::target::TargetCapability;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
@@ -29,6 +31,13 @@ pub struct AutomationEvent {
     pub tags: Vec<String>,
     /// Optional target hint (bypass routing, send directly)
     pub target_hint: Option<String>,
+    /// Capabilities the handling target MUST possess for this event to be
+    /// routed to it. Empty means "no extra requirement beyond category match"
+    /// — the historical behaviour. A non-empty set makes routing
+    /// capability-aware: only targets that declare every required capability
+    /// are eligible (see `Router::route` and `CapabilityVerifier`).
+    #[serde(default)]
+    pub required_capabilities: Vec<TargetCapability>,
 }
 
 impl AutomationEvent {
@@ -43,6 +52,7 @@ impl AutomationEvent {
             payload: serde_json::Value::Null,
             tags: Vec::new(),
             target_hint: None,
+            required_capabilities: Vec::new(),
         }
     }
 
@@ -67,6 +77,16 @@ impl AutomationEvent {
     /// Set a direct target hint (bypasses routing rules)
     pub fn with_target_hint(mut self, target: impl Into<String>) -> Self {
         self.target_hint = Some(target.into());
+        self
+    }
+
+    /// Require the handling target to declare a given capability. Repeated
+    /// calls accumulate; routing then only considers targets that declare
+    /// every required capability.
+    pub fn requiring(mut self, cap: TargetCapability) -> Self {
+        if !self.required_capabilities.contains(&cap) {
+            self.required_capabilities.push(cap);
+        }
         self
     }
 
