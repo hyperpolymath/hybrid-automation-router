@@ -1,3 +1,15 @@
+<!--
+SPDX-License-Identifier: CC-BY-SA-4.0
+SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+-->
+
+## Required file headers (READ FIRST before creating any source file)
+
+A pre-commit hook rejects source files missing the licence + owner header. The
+exact required header (and the `(hyperpolymath)` gotcha that repeatedly bites
+agents) is documented in **[`AGENT-HEADERS.md`](../AGENT-HEADERS.md)**. Run
+`just install-hooks` to install the version-controlled, lenient hook. See #51.
+
 ## Machine-Readable Artefacts
 
 The following files in `.machine_readable/` contain structured project metadata:
