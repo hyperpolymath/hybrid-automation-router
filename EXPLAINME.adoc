@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: CC-BY-SA-4.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+// Owner: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 
 = Hybrid Automation Router -- EXPLAINME
 
 == Intelligent event routing for automation targets
 
-[quote, README.adoc]
+[quote, README.md]
 ____
 The Hybrid Automation Router (HAR) is an intelligent routing layer that
 receives automation events from multiple sources (filesystem watchers,
@@ -13,9 +15,10 @@ based on capabilities, tags, priorities, and configurable strategies.
 ____
 
 HAR is a Rust workspace of 7 crates (core, config, dispatch, health, metrics,
-router, CLI) backed by Idris2 ABI definitions and an Ephapax linear-types
-guarantee for exactly-once delivery.
-See the README.adoc architecture diagram for the full event flow.
+router, CLI). Idris2 ABI definitions and an Ephapax linear-types spec for
+exactly-once delivery exist as *design scaffold* under `src/abi/` — they are
+not yet compiled as a package or wired into the Rust runtime.
+See the README.md architecture diagram for the full event flow.
 
 **Caveat:** Phase 1 -- the routing engine compiles and tests pass, but
 production deployment with live RPA Elysium targets is not yet validated.
@@ -28,14 +31,14 @@ production deployment with live RPA Elysium targets is not yet validated.
 | 7-crate workspace (har-core through har-cli), Rust 2021 edition
 
 | `src/abi/ProvenFSM.idr`
-| Idris2 ABI for router lifecycle state machine
+| Idris2 ABI scaffold for the router lifecycle state machine (type stubs)
 
 | `src/abi/ProvenQueue.idr`
-| Idris2 ABI for queue-based dispatch with backpressure
+| Idris2 ABI scaffold for queue-based dispatch with backpressure (type stubs)
 
 | `src/abi/LinearRouting.eph`
-| Ephapax linear types enforcing exactly-once event delivery
+| Ephapax linear-types spec for exactly-once delivery (design; not yet wired)
 
-| `README.adoc` (Architecture)
+| `README.md` (Architecture)
 | ASCII diagram of event-source -> router -> target flow
 |===
