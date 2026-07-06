@@ -1,22 +1,30 @@
 # SPDX-License-Identifier: MPL-2.0
----
-### [TSDM_SPEC]
-id: "tsdm-standard"
-version: "1.0.0"
+# TSDM standard — machine-readable specification.
+# A2ML Record dialect (standards/a2ml/RECORD-DIALECT-SPEC.adoc v1.0.0).
 
-axes:
-  axis_1:
-    name: "Planning"
-    levels: ["must", "should", "could"]
-  axis_2:
-    name: "Maintenance"
-    levels: ["corrective", "adaptive", "perfective"]
-  axis_3:
-    name: "Audit"
-    levels: ["systems", "compliance", "effects"]
+[metadata]
+name = "tsdm-standard"
+version = "1.0.0"
 
-invariants:
-  - "Every task MUST map to at least one TSDM coordinate"
-  - "Axis 1 priority governs resource allocation"
-  - "Axis 2 type governs commit categorisation"
-  - "Axis 3 focus governs audit depth"
+[[axes]]
+id = "axis_1"
+name = "Planning"
+levels = ["must", "should", "could"]
+
+[[axes]]
+id = "axis_2"
+name = "Maintenance"
+levels = ["corrective", "adaptive", "perfective"]
+
+[[axes]]
+id = "axis_3"
+name = "Audit"
+levels = ["systems", "compliance", "effects"]
+
+[invariants]
+rules = [
+  "Every task MUST map to at least one TSDM coordinate",
+  "Axis 1 priority governs resource allocation",
+  "Axis 2 type governs commit categorisation",
+  "Axis 3 focus governs audit depth",
+]
