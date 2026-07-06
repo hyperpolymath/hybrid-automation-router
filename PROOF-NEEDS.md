@@ -23,9 +23,9 @@ Tracker for proof obligations against the routing-core invariants
 
 | ID | Statement | Status | Notes |
 |----|-----------|--------|-------|
-| RR-1 | `Router::route` is total: never panics, never returns an unregistered `target_id` | STUB | Filed under PR3/PR4 follow-up. proptest harness owed. |
-| RR-2 | Dispatcher under arbitrary failure schedule either delivers exactly once or dead-letters with `attempts == max_attempts` | STUB | Filed under PR4. Requires injectable failure schedule on the transport. |
-| RR-3 | Routing decision is independent of HashMap iteration order | STUB | Easy first proptest — feed shuffled targets, check decision is invariant. |
+| RR-1 | `Router::route` is total: never panics, never returns an unregistered `target_id` | **CLOSED** | proptest `route_is_total_and_never_invents_a_target` (`crates/har-router/tests/routing_props.rs`): for arbitrary target sets + events, `route` returns either an error or a decision whose target (and every alternative) is a registered id. |
+| RR-2 | Dispatcher under arbitrary failure schedule either delivers exactly once or dead-letters with `attempts == max_attempts` | **CLOSED** | proptest `deliver_once_or_dead_letter` (`crates/har-dispatch/tests/dispatch_props.rs`): a `ScriptedTransport` failure schedule × retry budget always yields exactly one terminal state — one receipt & no DLQ, or one DLQ entry with `attempts == max_attempts` & no receipt. Runtime echo of `noEventLoss` + `noDuplicateDispatch`. |
+| RR-3 | Routing decision is independent of HashMap iteration order | **CLOSED** | proptest `selection_is_registration_order_independent`: reversing and rotating the target registration order leaves the chosen target unchanged (deterministic strategy, distinct ids). Runtime echo of `deterministicSelection`. |
 
 ## Echo-types audit (per 2026-06-01 owner directive)
 

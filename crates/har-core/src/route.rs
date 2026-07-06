@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 // SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+// Owner: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 
 //! Routing decisions and strategies
 //!
@@ -117,11 +118,21 @@ impl RoutingContext {
             .push(target_id.into());
     }
 
-    /// Find targets that can handle an event
+    /// Find targets that can handle an event.
+    ///
+    /// A target is eligible iff it is available, can handle the event's
+    /// category, AND declares every capability in the event's
+    /// `required_capabilities` (the capability-intersection step). The
+    /// requirement set is empty for events that don't opt into
+    /// capability-aware routing, so this is backwards-compatible.
     pub fn find_matching_targets(&self, event: &AutomationEvent) -> Vec<&AutomationTarget> {
         self.targets
             .iter()
-            .filter(|t| t.is_available() && t.can_handle(&event.category))
+            .filter(|t| {
+                t.is_available()
+                    && t.can_handle(&event.category)
+                    && t.satisfies(&event.required_capabilities)
+            })
             .collect()
     }
 }

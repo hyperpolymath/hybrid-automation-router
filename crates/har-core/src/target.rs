@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 // SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+// Owner: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 
 //! Automation targets — endpoints that can execute automation tasks
 //!
@@ -73,6 +74,14 @@ impl AutomationTarget {
         self.capabilities
             .iter()
             .any(|cap| cap.matches_category(category))
+    }
+
+    /// Check if this target declares every capability in `required`. An empty
+    /// requirement is trivially satisfied. This is the capability-intersection
+    /// step of capability-aware routing: a target is only eligible for an
+    /// event if it `satisfies` that event's `required_capabilities`.
+    pub fn satisfies(&self, required: &[TargetCapability]) -> bool {
+        required.iter().all(|need| self.capabilities.contains(need))
     }
 
     /// Check if target is available for routing

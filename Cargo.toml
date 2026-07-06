@@ -45,3 +45,6 @@ uuid = { version = "1.19", features = ["v4", "serde"] }
 
 # Configuration
 nickel-lang-core = "0.8"
+
+# Testing
+proptest = "1"
