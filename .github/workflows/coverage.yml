@@ -38,7 +38,8 @@ concurrency:
 
 env:
   # Ratchet this upward toward 95 as coverage improves. Never lower it.
-  FLOOR: "0"
+  # 2026-07-06: first measured baseline = 84.45%. Floor set at 84 (no-regression).
+  FLOOR: "84"
 
 jobs:
   coverage:
