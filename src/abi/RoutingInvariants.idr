@@ -16,9 +16,10 @@
 -- and PROOF-NEEDS.md for the remediation programme. This file is wired
 -- into the existing `verify-proofs` story via the `verification/` dir.
 
-module HAR.ABI.RoutingInvariants
+module RoutingInvariants
 
-import HAR.ABI.ProvenQueue
+import ProvenQueue
+import Data.List.Elem
 
 %default total
 
@@ -83,7 +84,8 @@ data Resolved : EventId -> Trace -> Type where
 public export
 data Quiescent : Trace -> Type where
   QNil  : Quiescent []
-  QStep : (case o of
+  QStep : {o : Outcome} ->
+          (case o of
             InFlight _ => Void
             _          => Unit) ->
           Quiescent rest ->
@@ -114,12 +116,14 @@ public export
 data DispatchCount : EventId -> TargetId -> Trace -> Nat -> Type where
   DCNil   : DispatchCount e t [] Z
   DCHit   : DispatchCount e t rest n -> DispatchCount e t (Delivered e t :: rest) (S n)
-  DCMissE : (case o of
+  DCMissE : {o : Outcome} ->
+            (case o of
               Delivered e' t' => Not (e = e')
               _               => Unit) ->
             DispatchCount e t rest n ->
             DispatchCount e t (o :: rest) n
-  DCMissT : (case o of
+  DCMissT : {o : Outcome} ->
+            (case o of
               Delivered e' t' => Not (t = t')
               _               => Unit) ->
             DispatchCount e t rest n ->

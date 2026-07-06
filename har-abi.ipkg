@@ -1,0 +1,11 @@
+-- SPDX-License-Identifier: MPL-2.0
+-- Idris2 package for the HAR ABI + routing invariants.
+-- Build/check with: idris2 --build har-abi.ipkg
+package har-abi
+version = 0.1.0
+authors = "Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>"
+license = "MPL-2.0"
+sourcedir = "src/abi"
+modules = ProvenFSM
+        , ProvenQueue
+        , RoutingInvariants

@@ -1,5 +1,6 @@
 -- SPDX-License-Identifier: MPL-2.0
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+-- Owner: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 --
 -- ProvenQueue: proven-queueconn types adapted for the Hybrid Automation Router.
 --
@@ -52,7 +53,7 @@
 --                      QuotaExceeded=3, AckTimeout=4, Unauthorized=5,
 --                      SerializationError=6
 
-module HAR.ABI.ProvenQueue
+module ProvenQueue
 
 import Data.Bits
 
