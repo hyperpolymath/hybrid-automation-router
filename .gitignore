@@ -70,3 +70,8 @@ deps/
 .cache/
 build/
 dist/
+
+# Idris2 build artifacts
+build/
+*.ttc
+*.ttm

@@ -631,6 +631,10 @@ install-hooks:
     @chmod +x .git/hooks/pre-commit
     @echo "Git hooks installed (fmt + lint + lenient header check; see AGENT-HEADERS.md)"
 
+# Build / typecheck the Idris2 ABI package (src/abi via har-abi.ipkg)
+verify-abi:
+    idris2 --build har-abi.ipkg
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # SECURITY
 # ═══════════════════════════════════════════════════════════════════════════════

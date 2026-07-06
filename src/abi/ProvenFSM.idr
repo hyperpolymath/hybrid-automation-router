@@ -1,5 +1,6 @@
 -- SPDX-License-Identifier: MPL-2.0
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+-- Owner: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 --
 -- ProvenFSM: proven-fsm types adapted for the Hybrid Automation Router.
 --
@@ -29,7 +30,7 @@
 --   MachineState:     Initial=0, Running=1, Terminal=2, Faulted=3
 --   EventDisposition: Consumed=0, Ignored=1, Queued=2, Dropped=3
 
-module HAR.ABI.ProvenFSM
+module ProvenFSM
 
 import Data.Bits
 
