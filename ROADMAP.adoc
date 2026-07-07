@@ -258,12 +258,12 @@ first.
 |Task |Description |Status
 
 |`har-meta`
-|Automation meta-model as Rust types + parallel Idris2 normative spec
-|☐ Pending
+|Automation meta-model as Rust types + parallel Idris2 normative spec (`src/abi/MetaModel.idr`)
+|⚙ Skeleton landed
 
 |A2ML interchange dialect
-|Schema + serde round-trip for the meta-model
-|☐ Pending
+|Schema + reference codec with round-trip (`docs/architecture/A2ML-INTERCHANGE-DIALECT.adoc`, dialect v0.1)
+|⚙ Skeleton landed (v0.1)
 
 |`har-il` (two-level IR)
 |Effect graph + plan; lowering reuses `har-router`/`har-dispatch` as executor
