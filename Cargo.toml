@@ -7,6 +7,7 @@ members = [
     "crates/har-abi",
     "crates/har-core",
     "crates/har-meta",
+    "crates/har-install",
     "crates/har-config",
     "crates/har-dispatch",
     "crates/har-health",

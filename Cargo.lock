@@ -634,6 +634,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "har-install"
+version = "0.2.0"
+dependencies = [
+ "chrono",
+ "har-meta",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror",
+]
+
+[[package]]
 name = "har-meta"
 version = "0.2.0"
 dependencies = [
