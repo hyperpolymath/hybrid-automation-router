@@ -13,6 +13,11 @@ Date: 2026-07-07
 Accepted (tier ordering owner-directed 2026-07-07; per-tier detail open to
 revision as tiers are taken on)
 
+Amended 2026-07-07 (owner-directed): flagship workload for the early tiers =
+prover/solver/language-toolchain centralisation; functionality depth axis
+added (D1 broad core -> D2 front-end functionality -> D3 enterprise
+functionality).
+
 == Context
 
 link:0002-automation-interlingua-declarative-imperative.adoc[ADR-0002] commits
@@ -160,6 +165,62 @@ cases leaking into the meta-model. This tier also closes the loop with
 ADR-0002's 2B track: Puppet/Salt/Ansible package resources drive exactly
 these managers, so their front-ends and HAR's providers must agree on the
 same meta-model mapping.
+
+=== Flagship workload for the early tiers — prover, solver, and language-toolchain centralisation (owner-directed 2026-07-07)
+
+The early tiers (1–2) are not exercised on arbitrary software: their flagship
+workload is **centralising the estate's prover, solver, and language-toolchain
+installs**. This universe is distributed almost entirely through tier-1/2
+channels, so it is both the acutest instance of the problem and the richest
+test corpus:
+
+* **Provers** — Idris2, Coq/Rocq, Agda, Lean (via elan), ACL2, and kin:
+  installed via opam pins, source builds, `curl | sh` scripts, or GitHub
+  release binaries; notoriously version-sensitive and unrecorded.
+* **Solvers** — Z3, CVC5, Yices, kissat, and SMT/SAT kin: typically GitHub
+  release tarballs hand-placed on PATH (pure tier 1/2).
+* **Language toolchains** — rustup, opam, ghcup, elan, juliaup, deno, zig,
+  gleam: the *toolchain managers themselves* are `curl | sh`-installed
+  (tier 1), then act as mini package managers for their own universe.
+
+That last point is structurally important: toolchain managers are
+**tier-4-like providers acquired through tier-1 channels**. Capturing them
+early forces the `InstallArtifact` schema and the eventual `PackageProvider`
+interface to compose (a provider can itself be an installed artefact) long
+before tier 4 formally arrives. Centralisation means: one declarative
+inventory of every prover/solver/toolchain on a host — versions pinned,
+integrity recorded, reproducibly reinstallable — where today there is a
+scatter of ad-hoc scripts.
+
+=== Functionality depth axis (owner-directed 2026-07-07: broad first)
+
+The tier ladder is the *structure* axis. Orthogonal to it runs a
+*functionality depth* axis, captured in this order:
+
+* **D1 — Broad core (FIRST).** Presence, version, install/remove/upgrade,
+  integrity, footprint — the ladder as specified above, swept broadly across
+  all tiers before any depth is added. Breadth before depth: the meta-model
+  must see the whole universe before specialising.
+* **D2 — Front-end functionality (SECOND).** What manager *front-ends* such
+  as **nala** and **aptitude** add on top of a core manager: alternative and
+  interactive dependency resolution, parallel fetch, transaction history and
+  undo, richer search and diagnostics. Captured as **optional capabilities on
+  the provider interface**, not as new providers — so HAR can both *consume*
+  a front-end where present and *expose* front-end-grade functionality
+  (history, undo, dry-run diffing) uniformly, including over tiers 1–3 where
+  no front-end exists at all. A HAR-recorded footprint store makes "undo"
+  possible even for a `curl | sh` install — front-end functionality the
+  manager-less world has never had.
+* **D3 — Enterprise functionality (THIRD).** The fleet-scale layer above
+  single-host installs: **provisioning** (preseed/kickstart, cloud-init,
+  Foreman/MAAS-style bare-metal and image pipelines), **configuration** (the
+  seam into ADR-0002's 2B config-management adapters — package resources are
+  where the two programmes meet), and **harnesses** (staged rollout/canary of
+  package changes, compliance and drift-verification harnesses, repository
+  mirroring/curation in the Landscape/Satellite mould). D3 also feeds the
+  Enterprise phase of the roadmap (multi-tenancy, audit) — an immutable audit
+  log of install decisions is the same artefact as the provenance record the
+  meta-model already carries.
 
 === Cross-cutting notes
 

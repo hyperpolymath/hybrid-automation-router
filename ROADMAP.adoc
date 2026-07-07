@@ -326,6 +326,33 @@ config-management front-ends.
 |☐ Pending
 |===
 
+*Flagship workload (tiers 1–2):* centralising the estate's **prover, solver,
+and language-toolchain** installs (Idris2/Coq/Agda/Lean; Z3/CVC5 and SMT/SAT
+kin; rustup/opam/ghcup/elan/juliaup/deno/zig/gleam) — distributed almost
+entirely through tier-1/2 channels; toolchain managers are themselves
+tier-4-like providers acquired via tier 1, forcing schema/interface
+composition early.
+
+Orthogonal *functionality depth* axis, in order (owner-directed; ADR-0003
+amendment 2026-07-07):
+
+[%autowidth]
+|===
+|Depth |Scope |Status
+
+|D1 — Broad core (first)
+|Presence/version/install/remove/upgrade/integrity/footprint swept broadly across all tiers
+|☐ Pending
+
+|D2 — Front-end functionality
+|What nala/aptitude add (interactive/alternative resolution, parallel fetch, history/undo, richer search) — captured as optional provider-interface capabilities, exposable uniformly even over tiers 1–3
+|☐ Pending
+
+|D3 — Enterprise functionality
+|Provisioning (preseed/kickstart, cloud-init, Foreman/MAAS-style), configuration (seam into 2B), harnesses (staged rollout/canary, compliance/drift verification, repo mirroring/curation)
+|☐ Pending
+|===
+
 ==== Long-term — Lingua franca
 
 Human-authored surface router language over the meta-model (A2ML-backed);
@@ -350,6 +377,12 @@ of existing tools is an optional, emergent consequence — never a precondition.
   realised unmodified by a tier-1 pseudo-provider, apk, scoop, and chocolatey
 * [ ] *(2C validation gate)* apt, dnf, Homebrew, and winget adapters fit the
   `PackageProvider` interface with no special cases leaking into the meta-model
+* [ ] *(2C flagship workload)* a host's full prover/solver/language-toolchain
+  set is captured as one declarative inventory (versions pinned, integrity
+  recorded) and reproducibly reinstalled from it on a clean host
+* [ ] *(2C D2 gate)* history/undo works uniformly through the provider
+  interface — including undoing a tier-1 install from its recorded footprint,
+  where no native front-end exists
 
 ---
 
