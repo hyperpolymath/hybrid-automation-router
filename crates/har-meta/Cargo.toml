@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: MPL-2.0
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+
+[package]
+name = "har-meta"
+description = "Automation meta-model — the tool-neutral ontology behind the HAR automation interlingua (ADR-0002)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+thiserror = { workspace = true }
+chrono = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+proptest = { workspace = true }

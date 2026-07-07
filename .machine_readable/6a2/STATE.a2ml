@@ -4,7 +4,7 @@
 [metadata]
 project = "hybrid-automation-router"
 version = "0.2.0"
-last-updated = "2026-07-06"
+last-updated = "2026-07-07"
 status = "active"
 
 [project-context]
@@ -32,9 +32,10 @@ har-metrics = "done"
 
 [next-actions]
 # Phase 2 reprioritised to Automation Interlingua — see docs/decisions/0002.
-priority-1 = "Phase 2A: automation meta-model (har-meta) + parallel Idris2 normative spec"
-priority-2 = "Phase 2A: A2ML interchange dialect + serde round-trip"
-priority-3 = "Phase 2A: two-level IR (har-il) with lowering onto har-router/har-dispatch"
+# 2A meta-model + A2ML dialect skeletons landed 2026-07-07 (har-meta crate, MetaModel.idr, dialect v0.1).
+priority-1 = "Phase 2A: two-level IR (har-il) with lowering onto har-router/har-dispatch"
+priority-2 = "Phase 2A: lifting (per-op effect model)"
+priority-3 = "Phase 2C tier 1 (managerless installs) driven by prover/solver/toolchain flagship (#106) once har-il exists"
 priority-4 = "Phase 2A gate: declarative route topology -> plan -> execute -> lift, round-tripped via A2ML"
 priority-5 = "Phase 2B: Puppet-in -> A2ML -> Salt-out handoff flagship"
 priority-6 = "Complete Phase 1: proven-queueconn runtime + Gleam backend (carried forward)"

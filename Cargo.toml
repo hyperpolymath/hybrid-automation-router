@@ -6,6 +6,7 @@ resolver = "2"
 members = [
     "crates/har-abi",
     "crates/har-core",
+    "crates/har-meta",
     "crates/har-config",
     "crates/har-dispatch",
     "crates/har-health",
