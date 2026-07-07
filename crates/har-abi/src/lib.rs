@@ -21,6 +21,8 @@
 //! - the wire codec ([`RoutedEnvelope`], [`RoutedReceipt`]);
 //! - the canonical queue-naming scheme ([`inbound_queue`], [`receipt_queue`]).
 
+#![forbid(unsafe_code)]
+
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -57,8 +59,9 @@ pub enum DeliveryGuarantee {
 }
 
 impl DeliveryGuarantee {
-    /// The C-ABI tag byte. MUST match the spec and proven-queueconn.
-    pub fn abi_tag(self) -> u8 {
+    /// The C-ABI tag byte. MUST match the spec and proven-queueconn. Named
+    /// `to_abi_tag` to match the other tag enums' method for a uniform surface.
+    pub fn to_abi_tag(self) -> u8 {
         match self {
             Self::AtMostOnce => 0,
             Self::AtLeastOnce => 1,
@@ -272,7 +275,7 @@ impl RoutedEnvelope {
             event_id: event_id.into(),
             category: category.into(),
             priority,
-            guarantee: guarantee.abi_tag(),
+            guarantee: guarantee.to_abi_tag(),
             content_type: content_type.into(),
             payload,
             headers: BTreeMap::new(),
@@ -395,9 +398,9 @@ mod conformance {
     fn tag_values_match_the_spec() {
         assert_eq!(ABI_VERSION, 1);
 
-        assert_eq!(DeliveryGuarantee::AtMostOnce.abi_tag(), 0);
-        assert_eq!(DeliveryGuarantee::AtLeastOnce.abi_tag(), 1);
-        assert_eq!(DeliveryGuarantee::ExactlyOnce.abi_tag(), 2);
+        assert_eq!(DeliveryGuarantee::AtMostOnce.to_abi_tag(), 0);
+        assert_eq!(DeliveryGuarantee::AtLeastOnce.to_abi_tag(), 1);
+        assert_eq!(DeliveryGuarantee::ExactlyOnce.to_abi_tag(), 2);
 
         assert_eq!(QueueOp::Publish.to_abi_tag(), 0);
         assert_eq!(QueueOp::Purge.to_abi_tag(), 5);
@@ -420,7 +423,7 @@ mod conformance {
     fn all_tags_round_trip_and_reject_out_of_range() {
         for tag in 0u8..3 {
             assert_eq!(
-                DeliveryGuarantee::from_abi_tag(tag).map(|v| v.abi_tag()),
+                DeliveryGuarantee::from_abi_tag(tag).map(|v| v.to_abi_tag()),
                 Some(tag)
             );
         }
