@@ -634,6 +634,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "har-meta"
+version = "0.2.0"
+dependencies = [
+ "chrono",
+ "proptest",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "har-metrics"
 version = "0.2.0"
 dependencies = [

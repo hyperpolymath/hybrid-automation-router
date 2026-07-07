@@ -1,0 +1,108 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+// Owner: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+
+= A2ML Interchange Dialect (har-interlingua), v0.1
+:toc: macro
+
+Draft specification of the A2ML dialect that carries the automation
+meta-model (ADR-0002). This is A2ML's *second* role — the estate's existing
+A2ML files are metadata/state checkpoints; this dialect is an **active
+interchange and plan carrier**, and deliberately shares nothing with the
+existing conventions beyond surface syntax.
+
+Reference codec: `crates/har-meta/src/a2ml.rs`. Normative model:
+`src/abi/MetaModel.idr`.
+
+toc::[]
+
+== Surface syntax
+
+Line-oriented, estate-A2ML style:
+
+* `# comment` and blank lines anywhere
+* `[section]` or `[section.qualifier]` headers
+* `key = value` pairs belonging to the most recent header
+
+Values (the dialect's scalar universe — deliberately small in v0.1):
+
+|===
+|Form |Example
+
+|String |`"rpa-elysium"` (escapes: `\\` `\"` `\n` `\r` `\t`)
+|Integer |`5`, `-12` (i64 range)
+|Boolean |`true`, `false`
+|String list |`["web", "batch"]`
+|===
+
+Nested maps, floats, and non-string lists are *not* representable in v0.1;
+they arrive, if a consuming domain needs them, with a version bump.
+
+== Document structure
+
+=== `[interlingua]` header (required, exactly once)
+
+[source]
+----
+[interlingua]
+dialect = "har-interlingua"
+version = "0.1"
+kind = "resource-graph"
+----
+
+Readers MUST reject a missing/duplicate header, a foreign `dialect`, or an
+unsupported `version`.
+
+=== `[resource.<id>]` — one per resource
+
+[source]
+----
+[resource.web-route]
+kind = "har.route"
+owner = "har"
+status = "declared"
+provider = "proven-queueconn"   # optional
+attr.target = "rpa-elysium"
+attr.priority = 5
+attr.enabled = true
+attr.tags = ["web"]
+----
+
+* `<id>`, `kind`, and attribute names share the identifier charset
+  `[A-Za-z0-9._:-]+`
+* `status` is one of `declared | planned | realised | handed-off`
+  (lifecycle and its FSM: `MetaModel.idr`)
+* `owner` is the tool/system currently responsible (provenance)
+* Unknown keys are rejected (v0.1 is strict; forward compatibility is the
+  version field's job, not silent tolerance)
+
+=== `[dependency.<n>]` — one per edge
+
+[source]
+----
+[dependency.1]
+from = "web-route"
+to = "queue-conn"
+relation = "require"
+----
+
+`relation` is `before | require | notify`. Section order in a document is
+free: dependencies may precede the resources they name.
+
+== What v0.1 deliberately does not carry
+
+* **Provenance history** — the dialect moves the current shared view
+  (owner + status); the append-only event history is checkpoint metadata
+  and travels with the handoff engine, not here.
+* **Handoff checkpoints** — `[handoff.*]` sections are reserved for the
+  handoff engine.
+* **Plans** — the imperative (lowered) level gets its own `kind` when
+  `har-il` lands; v0.1 carries only `resource-graph`.
+
+== Guarantees
+
+* Emission is deterministic: resources in id order, attributes in name
+  order, dependencies in insertion order.
+* `parse(emit(g))` reproduces `g` up to provenance history, and
+  `emit(parse(emit(g))) == emit(g)` (property-tested in
+  `crates/har-meta/tests/roundtrip_props.rs`).
