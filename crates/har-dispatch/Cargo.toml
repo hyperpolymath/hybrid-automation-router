@@ -19,6 +19,13 @@ anyhow = { workspace = true }
 tracing = { workspace = true }
 async-trait = { workspace = true }
 chrono = { workspace = true }
+async-nats = { version = "0.49", optional = true }
+
+[features]
+# The real NATS-backed transport. Off by default so the standard build and CI
+# need neither the async-nats dependency tree nor a running NATS server; live
+# integration tests require `--features nats` and a reachable server (NATS_URL).
+nats = ["dep:async-nats"]
 
 [dev-dependencies]
 proptest = { workspace = true }

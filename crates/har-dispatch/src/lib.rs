@@ -29,6 +29,11 @@
 //!   deliveries so a slow target cannot exhaust the dispatcher.
 
 #![forbid(unsafe_code)]
+
+/// NATS-backed real transport (behind the `nats` feature).
+#[cfg(feature = "nats")]
+pub mod nats;
+
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use har_core::{
