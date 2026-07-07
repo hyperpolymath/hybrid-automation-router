@@ -307,7 +307,7 @@ config-management front-ends.
 
 |1 — Package-manager-less installs
 |`curl \| sh` scripts, hand-placed tarballs, `make install`, binary drops — regularise into declarative resources with recorded footprint, integrity, derived uninstall/upgrade
-|☐ Pending
+|☑ Landed — `har-install` crate: `InstallArtifact` schema, `pkg.install` meta-model mapping (lossless round-trip), footprint capture (declared-manifest vs traced), derived uninstall inverse, hermetic capture→uninstall→reinstall cycle
 
 |2 — Forge-release regularisation
 |GitHub Releases assets, tag-pinned source installs, checksum/attestation verification — forge as de-facto registry, structured origin
@@ -342,7 +342,7 @@ amendment 2026-07-07):
 
 |D1 — Broad core (first)
 |Presence/version/install/remove/upgrade/integrity/footprint swept broadly across all tiers
-|☐ Pending
+|◑ Started — tier-1 broad core landed; flagship prover/solver/toolchain corpus surveyed (`har_install::corpus`)
 
 |D2 — Front-end functionality
 |What nala/aptitude add (interactive/alternative resolution, parallel fetch, history/undo, richer search) — captured as optional provider-interface capabilities, exposable uniformly even over tiers 1–3
@@ -370,9 +370,10 @@ of existing tools is an optional, emergent consequence — never a precondition.
 * [ ] A Terraform (declarative) and an Ansible (imperative) source both import
   to the same IR and re-export losslessly for the covered subset
 * [ ] Federation view detects an overlapping-ownership conflict between two tools
-* [ ] *(2C tier-1 gate)* A `curl \| sh`-style install is captured as a
+* [x] *(2C tier-1 gate)* A `curl \| sh`-style install is captured as a
   declarative resource with recorded footprint, then uninstalled and
-  reinstalled idempotently from that record alone
+  reinstalled idempotently from that record alone — `har-install`
+  `tests/gate_idempotent_reinstall.rs`, exercised over real files
 * [ ] *(2C interface gate)* One declarative "ensure installed" A2ML document is
   realised unmodified by a tier-1 pseudo-provider, apk, scoop, and chocolatey
 * [ ] *(2C validation gate)* apt, dnf, Homebrew, and winget adapters fit the

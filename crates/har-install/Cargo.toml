@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: MPL-2.0
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+
+[package]
+name = "har-install"
+description = "Install-domain tier 1 — regularise package-manager-less installs onto the HAR meta-model (ADR-0003)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+har-meta = { path = "../har-meta" }
+serde = { workspace = true }
+thiserror = { workspace = true }
+sha2 = "0.10"
+
+[dev-dependencies]
+serde_json = { workspace = true }
+chrono = { workspace = true }
