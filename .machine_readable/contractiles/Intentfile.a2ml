@@ -1,9 +1,8 @@
 # SPDX-License-Identifier: MPL-2.0
-# Intentfile (A2ML Canonical) — north-star contractile for rsr-template-repo
+# Intentfile (A2ML Canonical) — north-star contractile for hybrid-automation-router
 # Author: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 #
-# Paired runner: intend.ncl
-# Verb:          intend
+# Verb: intend
 #
 # Semantics: North-star contractile. Declares BOTH concrete committed
 #            next-actions AND horizon aspirations the project wishes to
@@ -20,80 +19,93 @@
 #            contractile for hard gates.
 
 @abstract:
-North-star contractile for rsr-template-repo. This repository is the
-canonical template for Rhodium Standard Repository compliance. It provides
-the scaffold that all hyperpolymath repos should copy and customize.
+North-star contractile for hybrid-automation-router (HAR). HAR is a
+pluggable routing engine that dispatches automation events from sources to
+targets; its strategic direction (ADR-0002) is an automation interlingua —
+a tool-neutral meta-model carried on A2ML that doubles as an execution IR —
+letting heterogeneous automation estates hand off and resume across each
+other.
 @end
 
 ## Purpose
 
-The rsr-template-repo serves as the master template for all hyperpolymath
-repositories. It contains the complete set of contractile files, machine-readable
-specifications, and governance documentation that define the Rhodium Standard.
-
-Every new repository in the hyperpolymath estate should be initialized by
-copying this template and substituting the placeholder values with
-repo-specific content.
+HAR routes automation events to the best target (rpa-elysium first-class)
+via composable strategies, and is growing a declarative surface: translate
+between desired routing state and ordered dispatch (Phase 2A), then
+generalise to cross-tool handoff and federation (Phase 2B), with software
+installation & package management as the first concrete resource domain
+(Phase 2C, ADR-0003 ladder).
 
 ## Anti-Purpose
 
 This repository is NOT:
-- A general-purpose project scaffold for external use (hyperpolymath-only)
-- A replacement for per-repo customization (all files must be bespoke)
-- A static template that never changes (evolves with RSR spec)
-- A runtime library or framework (build-time only)
+- A replacement for incumbent automation tools (Puppet/Salt/Terraform/
+  Ansible) — replacement is out of scope and sponsor-gated (ADR-0002)
+- An RPA engine — it routes to rpa-elysium, it does not drive UIs itself
+- A general message broker — queue semantics follow the proven-queueconn
+  ABI; NATS is a feature-gated transport, not the product
+- A package manager — the 2C ladder subsumes install functionality behind
+  the meta-model; incumbent managers are wrapped last, not rebuilt
 
 ## If In Doubt
 
 If you are unsure whether a change is in scope, ask. Sensitive areas:
+- src/abi/ (Idris2 + Ephapax normative specs — parallel-track discipline)
 - .machine_readable/ contractile definitions
-- RSR specification files
-- Governance templates
-- License policy documents
+- docs/decisions/ (ADRs record owner-ratified direction)
+- Routing strategy semantics (deterministic selection is load-bearing)
 
 ## Committed Next-Actions
 
-### repo-initialization
-- description: Provide just copy-and-substitute template for new repos
-- probe: test -f scripts/init-repo.sh
+### phase-2a-meta-model-skeleton
+- description: Meta-model + A2ML interchange dialect + two-level IR (graph ⇄ plan) proven on HAR's own routing domain
+- probe: test -d crates/har-metamodel
+- status: declared
+- notes: The de-risking gate for everything downstream (ADR-0002); Idris2 spec and Rust IR as parallel tracks
+
+### phase-2c-tier-1-managerless
+- description: Regularise package-manager-less installs (curl|sh, tarballs, make install) — issue #97
+- probe: gh issue view 97 --json state -q .state | grep -q CLOSED
+- status: declared
+- notes: Gated on the 2A skeleton; flagship workload = prover/solver/toolchain centralisation (#106)
+
+### routing-strategies-complete
+- description: All seven routing strategies implemented with deterministic selection
+- probe: cargo test -p har-router
 - status: done
-- notes: Run with source scripts/init-repo.sh <new-repo-name>
+- notes: RoundRobin/WeightedRandom/LeastLoaded/Failover landed 2026-07-07; route() honours the configured strategy
 
-### contractile-completeness
-- description: Every RSR contractile has an a2ml and ncl implementation
-- probe: ls .machine_readable/contractiles/*.a2ml | wc -l | grep -q "^6$"
-- status: in_progress
-- notes: Currently 6 contractile verbs: intend, must, trust, adjust, bust, dust
-
-### automation-scripts
-- description: All repetitive tasks have just recipes
-- probe: grep -c "^# " Justfile | grep -q "^[6-9][0-9]*$"
-- status: in_progress
+### cli-documented-surface
+- description: har-cli exposes the documented route-management surface (list, add, remove, inspect) with tests
+- probe: cargo test -p har-cli
+- status: done
+- notes: Config-backed list/add/remove/inspect + dry-run route/status landed 2026-07-07; 8 unit tests + e2e smoke
 
 ## Wishes
 
 ### Near Horizon
 
-#### cross-repo-validation
-- description: Tooling to validate all repos against RSR spec
+#### arghda-proof-pipeline-pilot
+- description: arghda-core as an estate-internal front-end adapter — ladder pipelines over proof obligations (issue #104)
 - horizon: near
 - status: declared
-
-#### automated-substitution
-- description: Script to automate repo-specific substitution in template
-- horizon: near
-- status: declared
+- notes: Owner decisions D1–D3 pending; no meta-model extension required
 
 ### Mid Horizon
 
-#### formal-verification
-- description: Idris2 proofs for all critical contractile invariants
+#### puppet-salt-flagship-handoff
+- description: Puppet-in → A2ML → Salt-out handoff of a partially-realised estate (Phase 2B flagship)
+- horizon: mid
+- status: declared
+
+#### formal-stack-load-bearing
+- description: Ephapax exactly-once ownership + proven-FSM lifecycle + Idris2 invariants wired end-to-end, not decorative
 - horizon: mid
 - status: declared
 
 ### Far Horizon
 
-#### ecosystem-visualization
-- description: Interactive graph of all hyperpolymath repos and dependencies
+#### lingua-franca-surface-language
+- description: Human-authored router language over the meta-model; N front-ends + M back-ends replace N×M translators
 - horizon: far
 - status: declared
