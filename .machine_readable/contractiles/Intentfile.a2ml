@@ -78,7 +78,8 @@ If you are unsure whether a change is in scope, ask. Sensitive areas:
 ### cli-documented-surface
 - description: har-cli exposes the documented route-management surface (list, add, remove, inspect) with tests
 - probe: cargo test -p har-cli
-- status: in_progress
+- status: done
+- notes: Config-backed list/add/remove/inspect + dry-run route/status landed 2026-07-07; 8 unit tests + e2e smoke
 
 ## Wishes
 
