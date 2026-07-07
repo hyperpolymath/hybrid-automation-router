@@ -216,9 +216,14 @@ A binding *conforms* to this spec at `abi_version = 1` iff:
 
 Machine-checked conformance in this repo:
 
-* *Rust binding* — `crates/har-core/src/guarantee.rs` pins the
-  `DeliveryGuarantee` tags with a round-trip test; the wider ABI tag surface and
-  its conformance test live alongside it as the Rust binding grows.
+* *Rust binding* — the standalone, vendorable `har-abi` crate
+  (`crates/har-abi/`) owns all five tag enums, the constants, the queue-naming
+  helpers, and the `RoutedEnvelope` / `RoutedReceipt` codec. Its `conformance`
+  tests pin every tag value to this spec and check round-trip + out-of-range
+  rejection; its `codec` tests check envelope/receipt encode–decode (including
+  base64 payload, version-mismatch and oversize rejection). `har-core`
+  re-exports the crate as `har_core::abi` and adds the
+  `AutomationEvent::to_envelope` conversion.
 * *Idris2 binding* — `src/abi/ProvenQueue.idr` declares the same tags; the tag
   functions are total and the values are pinned by the doc-comments that cite
   this spec.

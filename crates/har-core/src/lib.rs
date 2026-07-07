@@ -15,18 +15,20 @@
 //! - [`RoutingContext`] — Contextual information for making routing decisions
 
 #![forbid(unsafe_code)]
-pub mod abi;
 pub mod error;
 pub mod event;
-pub mod guarantee;
 pub mod route;
 pub mod target;
 pub mod verify;
 
-pub use abi::{MessageState, QueueError, QueueOp, QueueState, ABI_VERSION};
+/// The shared queue ABI (tags + `RoutedEnvelope` codec) — re-exported from the
+/// standalone, vendorable `har-abi` crate so `har_core::abi::*` keeps working
+/// while the ABI itself lives in the separate shared artifact.
+pub use har_abi as abi;
+
 pub use error::{Error, Result};
 pub use event::{AutomationEvent, EventPriority, EventSource};
-pub use guarantee::DeliveryGuarantee;
+pub use har_abi::{DeliveryGuarantee, MessageState, QueueError, QueueOp, QueueState, ABI_VERSION};
 pub use route::{RouteDecision, RoutingContext, RoutingStrategy};
 pub use target::{AutomationTarget, TargetCapability, TargetStatus};
 pub use verify::{AllowAll, CapabilityVerifier, RequireDeclaredCapabilities};

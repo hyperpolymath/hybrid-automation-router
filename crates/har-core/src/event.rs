@@ -97,6 +97,44 @@ impl AutomationEvent {
             "filesystem" | "scheduled" | "manual"
         )
     }
+
+    /// Encode this event as a shared-ABI [`har_abi::RoutedEnvelope`] for
+    /// dispatch to a target with the given delivery `guarantee`. The JSON
+    /// payload is carried as `application/json` bytes; routing metadata
+    /// (tags, target hint, required capabilities, source) goes in the
+    /// envelope's reserved headers.
+    pub fn to_envelope(
+        &self,
+        guarantee: har_abi::DeliveryGuarantee,
+    ) -> crate::Result<har_abi::RoutedEnvelope> {
+        let payload = serde_json::to_vec(&self.payload)?;
+        let mut env = har_abi::RoutedEnvelope::new(
+            self.id.as_str(),
+            self.category.as_str(),
+            self.priority.as_tag(),
+            guarantee,
+            "application/json",
+            payload,
+            self.timestamp.to_rfc3339(),
+        )
+        .with_header("source", self.source.descriptor());
+        if !self.tags.is_empty() {
+            env = env.with_header("tags", self.tags.join(","));
+        }
+        if let Some(hint) = &self.target_hint {
+            env = env.with_header("target_hint", hint.clone());
+        }
+        if !self.required_capabilities.is_empty() {
+            let caps = self
+                .required_capabilities
+                .iter()
+                .map(|c| c.slug())
+                .collect::<Vec<_>>()
+                .join(",");
+            env = env.with_header("required_capabilities", caps);
+        }
+        Ok(env)
+    }
 }
 
 /// Where an automation event originated
@@ -117,6 +155,23 @@ pub enum EventSource {
     Chained { source_target: String },
 }
 
+impl EventSource {
+    /// A compact `kind:detail` descriptor for the shared ABI's `source` header.
+    pub fn descriptor(&self) -> String {
+        match self {
+            Self::Filesystem { path } => format!("filesystem:{path}"),
+            Self::Webhook { endpoint } => format!("webhook:{endpoint}"),
+            Self::Queue { queue_name } => format!("queue:{queue_name}"),
+            Self::Schedule { cron } => format!("schedule:{cron}"),
+            Self::Manual { user } => match user {
+                Some(u) => format!("manual:{u}"),
+                None => "manual:".to_string(),
+            },
+            Self::Chained { source_target } => format!("chained:{source_target}"),
+        }
+    }
+}
+
 /// Event priority levels
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -126,6 +181,19 @@ pub enum EventPriority {
     Normal,
     High,
     Critical,
+}
+
+impl EventPriority {
+    /// The shared ABI's priority byte: `low`=0, `normal`=1, `high`=2,
+    /// `critical`=3.
+    pub fn as_tag(self) -> u8 {
+        match self {
+            Self::Low => 0,
+            Self::Normal => 1,
+            Self::High => 2,
+            Self::Critical => 3,
+        }
+    }
 }
 
 fn generate_event_id() -> String {

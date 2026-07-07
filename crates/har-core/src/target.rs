@@ -117,6 +117,23 @@ pub enum TargetCapability {
 }
 
 impl TargetCapability {
+    /// The canonical snake_case slug for this capability (matches the serde
+    /// representation), used in the shared ABI's `required_capabilities` header.
+    pub fn slug(self) -> &'static str {
+        match self {
+            Self::Filesystem => "filesystem",
+            Self::WebBrowser => "web_browser",
+            Self::ApiIntegration => "api_integration",
+            Self::DocumentProcessing => "document_processing",
+            Self::Email => "email",
+            Self::DesktopGui => "desktop_gui",
+            Self::Scheduling => "scheduling",
+            Self::Plugin => "plugin",
+            Self::Ocr => "ocr",
+            Self::Nlp => "nlp",
+        }
+    }
+
     /// Check if this capability matches an event category
     pub fn matches_category(&self, category: &str) -> bool {
         matches!(
