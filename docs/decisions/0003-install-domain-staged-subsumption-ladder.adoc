@@ -1,0 +1,210 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+// Owner: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+
+= Architecture Decision Record: 0003-install-domain-staged-subsumption-ladder
+
+== 3. Install & Package-Management Domain — Staged Subsumption Ladder
+
+Date: 2026-07-07
+
+== Status
+
+Accepted (tier ordering owner-directed 2026-07-07; per-tier detail open to
+revision as tiers are taken on)
+
+== Context
+
+link:0002-automation-interlingua-declarative-imperative.adoc[ADR-0002] commits
+HAR to an automation interlingua: a tool-neutral meta-model, carried on A2ML,
+that doubles as an execution IR. Its sequencing proves the
+declarative/imperative duality on HAR's own routing domain first (2A), then
+adds external tool adapters (2B). What it deliberately does not yet pick is
+the *first concrete resource domain* beyond routing — the domain on which the
+meta-model (`Resource`, `Effect`, `State`, `Provider`, `Provenance`) earns
+generality.
+
+The owner has directed that this domain be **software installation and package
+management**, and — load-bearing — has directed the *order* in which its
+territory is captured.
+
+=== Why installs are the right first domain
+
+* Software presence is the single most universal automation resource: every
+  configuration-management tool the 2B adapters target (Puppet `package`,
+  Salt `pkg`, Ansible `package`/`apt`/`dnf`/`win_chocolatey`, even Terraform
+  provisioners) has it at its core. Proving the meta-model here feeds 2B
+  directly.
+* The domain spans the entire structure spectrum in one vertical: from raw
+  `curl | sh` (no interface at all) up to apt/dnf (mature resolvers with rich
+  semantics). No other domain exercises regularisation, lifting, and
+  subsumption so completely.
+* The declarative/imperative duality is native to it: "ensure `ripgrep` 14.x
+  is installed" (declarative) versus "download this tarball, unpack, place on
+  PATH" (imperative) is exactly the lowering/lifting pair ADR-0002 defines.
+
+=== The ordering problem
+
+The naive capture order is to wrap the big package managers first (apt, brew,
+winget) because they are the most used. That order is wrong for a meta-model:
+
+* Incumbent managers already have coherent interfaces — wrapping them first
+  adds the least value and, worse, **bakes their assumptions into the
+  meta-model** before it has been shaped by the general case.
+* The acute, unserved pain is at the *other* end: ad-hoc installs with no
+  manifest, no uninstall, no upgrade path, no integrity story. Nothing else
+  regularises those; HAR can.
+
+== Decision
+
+Capture the install domain as a **five-tier subsumption ladder**, taken on
+strictly in this order (owner-directed). Each tier adds one increment of
+structure; the uniform interface is *discovered* at tier 4 and *validated* at
+tier 5, rather than copied from an incumbent at the start.
+
+=== Tier 1 — Package-manager-less installs (FIRST, most acute)
+
+The obscure/ad-hoc end: installs with no manager and no interface.
+
+* Vendor `curl | sh` / `wget | bash` install scripts (rustup-, deno-,
+  ollama-style)
+* Tarball/zip unpacked and hand-placed onto `PATH`
+* `./configure && make && make install`
+* Self-installing vendor binaries and single-binary drops; AppImage-style
+  no-install artefacts
+* `git clone` + symlink arrangements
+
+These have no manifest, no version registry, no recorded footprint, no
+uninstall, no upgrade path, and usually no integrity check. **Capture goal:**
+define the domain's core resource schema from first principles —
+`InstallArtifact` with `origin`, `method`, `integrity` (checksum/signature
+where any exists), `footprint` (files placed), derived `uninstall` inverse,
+and re-run/upgrade policy. Regularising these into declarative "ensure
+installed at version X, footprint recorded" is pure added value: it makes the
+unmanageable auditable, uninstallable, and upgradeable. Because there is no
+incumbent interface to conform to, the schema is shaped by the general
+problem, not by any manager's worldview.
+
+=== Tier 2 — Forge-release install regularisation (GitHub et al.)
+
+Installs straight from a forge, without a package manager:
+
+* GitHub Releases assets (platform/arch/libc-suffixed binaries and tarballs,
+  the asset-naming zoo)
+* Tag- or commit-pinned source installs (`cargo install --git`,
+  `go install module@version` style)
+* Release-attached `checksums.txt`, signatures, sigstore/attestation assets
+* "latest" versus pinned semantics; API rate limits; multi-forge equivalents
+  (GitLab releases, Codeberg)
+
+The forge is a *de-facto registry*: versioning and integrity material exist
+but nothing consumes them uniformly. **Capture goal:** a forge-release
+provider that specialises the tier-1 schema — `origin` becomes structured
+(forge/repo/release/asset-selection matrix), integrity verification becomes
+mandatory where material exists, and provenance is recorded. Tier 1's schema
+must absorb this without redesign; if it cannot, tier 1 was wrong and is fixed
+*before* proceeding.
+
+=== Tier 3 — Direct package-file installs (deb/rpm)
+
+Packaged artefacts installed outside their repositories: downloaded `.deb`
+via `dpkg -i`, `.rpm` via `rpm -i`/`-U` (the vendor-download pattern —
+browser/editor `.deb`s and kin).
+
+The artefact is now fully structured — manifest, file lists, declared
+dependencies, maintainer scriptlets, and registration in a system package
+database (so query/uninstall exist natively) — but acquisition is still
+tier-1/2-style (fetch from a URL or release) and there is **no resolver**.
+**Capture goal:** map package-file metadata onto the meta-model — declared
+dependencies become `Dependency` edges, scriptlets become modelled `Effect`s,
+database registration becomes observed `State`. This is the bridge tier: the
+first time HAR reads an artefact's *own* declaration of what it does, and the
+first place lifting (observed system state -> declarative inventory) gets
+real structure to lift.
+
+=== Tier 4 — Secondary package managers, subsumed behind one interface
+
+Real managers with real CLIs and repositories, but smaller surface area than
+the core incumbents: **apk** (Alpine), **scoop** and **chocolatey** (Windows),
+and kin.
+
+This is where the domain's **uniform provider interface** is defined — the
+"manage and subsume as one interface" move. **Capture goal:**
+
+* A `PackageProvider` abstraction: query / install / remove / upgrade / pin /
+  verify, plus declared capability flags (pinning? locking? multi-version?
+  user-scope vs system-scope? rollback?). Providers advertise what they can
+  do; the planner lowers around what they cannot.
+* Adapters for apk, scoop, and chocolatey — deliberately three different
+  worlds (Linux musl system manager; Windows user-scope; Windows
+  system-scope) so the interface is forced general, not Linux-shaped.
+* Tiers 1–3 retrofitted as pseudo-providers behind the same interface (the
+  tier-1 footprint store acts as their "package database"), proving the
+  interface subsumes the manager-less world too.
+
+Three managers of modest complexity across two OS families are the right
+anvil: big enough to force generality, small enough that a wrong abstraction
+is cheap to fix.
+
+=== Tier 5 — Core package managers (LAST)
+
+The incumbents: **winget**, **Homebrew** (the macOS package manager, plus
+Linuxbrew), **apt**, **dnf/yum**, and kin (zypper, pacman as follow-ons).
+These carry the richest and most idiosyncratic semantics — apt pinning and
+holds, dnf modules/streams, brew formulae vs casks, winget's multiple sources
+and installer types.
+
+**Capture goal:** map each onto the tier-4 interface *as validation* — the
+interface is only correct if the richest ecosystems fit it without special
+cases leaking into the meta-model. This tier also closes the loop with
+ADR-0002's 2B track: Puppet/Salt/Ansible package resources drive exactly
+these managers, so their front-ends and HAR's providers must agree on the
+same meta-model mapping.
+
+=== Cross-cutting notes
+
+* **Guix/Nix** (the estate's primary and fallback managers) are deliberately
+  *not* a tier: they are already fully declarative and sit closer to whole
+  configuration management than to a package CLI. They serve as the
+  *calibration reference* — the semantics (reproducibility, rollback,
+  declarative manifests) that tier-1 artefacts entirely lack and the ladder
+  incrementally recovers. Adapters for them are deferred until after tier 5.
+* **HAR fit:** install operations are routed as automation events; providers
+  are `AutomationTarget`s; exactly-once delivery (Ephapax linear ownership)
+  is precisely the "no double-install / no double-uninstall" guarantee; the
+  proven-FSM lifecycle carries per-artefact state
+  (`declared -> planned -> realised`).
+* **Relation to 2A/2B:** the ladder is Phase **2C** in the roadmap. Tier 1
+  may begin once the 2A meta-model skeleton exists (it is the first consumer
+  that shapes it); tiers 4–5 inform and are informed by 2B's
+  config-management front-ends.
+
+== Consequences
+
+=== Positive
+
+* The meta-model's `Resource`/`Provider` split is proven on the most
+  universal automation resource before being claimed general.
+* Highest-value capture first: the manager-less world gains uninstall,
+  upgrade, audit, and integrity that nothing else provides.
+* The provider interface emerges from the general case instead of inheriting
+  an incumbent's assumptions; incumbents validate it at the end.
+* Direct feed into 2B: package-resource mappings for Puppet/Salt/Ansible
+  fall out of tiers 4–5.
+
+=== Negative
+
+* Five tiers is a long programme; the discipline of not skipping ahead to
+  "just wrap apt" must hold.
+* Tier 1 footprint tracking (what did that install script actually touch?)
+  is genuinely hard — sandboxed/traced execution or declared manifests are
+  each partial answers.
+* Windows providers (scoop, chocolatey, winget) commit HAR to a Windows
+  execution story earlier than the routing core otherwise required.
+
+=== Neutral
+
+* Ordering is owner-directed and fixed; the per-tier scope above is working
+  detail, revisable as each tier is taken on.
+* Tracking issues (one umbrella + one per tier) carry the live state; this
+  ADR records the ordering and its rationale.

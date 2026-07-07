@@ -293,6 +293,39 @@ first.
 |☐ Pending
 |===
 
+==== 2C — Install & package-management domain (first concrete domain)
+
+First resource domain beyond routing, captured as a **staged subsumption
+ladder** — least-structured first, incumbents last (ordering owner-directed;
+see link:docs/decisions/0003-install-domain-staged-subsumption-ladder.adoc[ADR-0003]).
+Tier 1 may begin once the 2A meta-model skeleton exists; tiers 4–5 feed 2B's
+config-management front-ends.
+
+[%autowidth]
+|===
+|Tier |Scope |Status
+
+|1 — Package-manager-less installs
+|`curl \| sh` scripts, hand-placed tarballs, `make install`, binary drops — regularise into declarative resources with recorded footprint, integrity, derived uninstall/upgrade
+|☐ Pending
+
+|2 — Forge-release regularisation
+|GitHub Releases assets, tag-pinned source installs, checksum/attestation verification — forge as de-facto registry, structured origin
+|☐ Pending
+
+|3 — Direct package-file installs
+|`dpkg -i` / `rpm -i` of downloaded `.deb`/`.rpm` — map manifests, dependency declarations, scriptlets onto the meta-model
+|☐ Pending
+
+|4 — Secondary managers behind one interface
+|apk, scoop, chocolatey — define the uniform `PackageProvider` interface (query/install/remove/upgrade/pin/verify + capability flags); retrofit tiers 1–3 as pseudo-providers
+|☐ Pending
+
+|5 — Core package managers
+|winget, Homebrew, apt, dnf/yum — validate the interface against the richest incumbent semantics; closes the loop with 2B package resources
+|☐ Pending
+|===
+
 ==== Long-term — Lingua franca
 
 Human-authored surface router language over the meta-model (A2ML-backed);
@@ -310,6 +343,13 @@ of existing tools is an optional, emergent consequence — never a precondition.
 * [ ] A Terraform (declarative) and an Ansible (imperative) source both import
   to the same IR and re-export losslessly for the covered subset
 * [ ] Federation view detects an overlapping-ownership conflict between two tools
+* [ ] *(2C tier-1 gate)* A `curl \| sh`-style install is captured as a
+  declarative resource with recorded footprint, then uninstalled and
+  reinstalled idempotently from that record alone
+* [ ] *(2C interface gate)* One declarative "ensure installed" A2ML document is
+  realised unmodified by a tier-1 pseudo-provider, apk, scoop, and chocolatey
+* [ ] *(2C validation gate)* apt, dnf, Homebrew, and winget adapters fit the
+  `PackageProvider` interface with no special cases leaking into the meta-model
 
 ---
 
@@ -524,4 +564,4 @@ This roadmap and the Hybrid Automation Router project are licensed under MPL-2.0
 
 ---
 
-_Last updated: 2026-03-17_
+_Last updated: 2026-07-07_
