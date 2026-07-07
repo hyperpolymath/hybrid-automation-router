@@ -1,0 +1,558 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+// Owner: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+
+= The Automation Landscape — a Survey Grounding the Meta-Model
+:toc:
+:toclevels: 3
+
+== Purpose and method
+
+link:../../decisions/0002-automation-interlingua-declarative-imperative.adoc[ADR-0002]
+commits HAR to an interlingua whose schema is a *tool-neutral meta-model of
+automation* (`Resource`, `Effect`, `Dependency`, `State`, `Owner`, `Provider`,
+`HandoffBoundary`, `Provenance`). A meta-model is only as good as the survey
+of what it must be neutral *over*. This document is that survey.
+
+It is deliberately ordered from broad to specific:
+
+. *Part I — Foundations*: the shape of the whole space, with particular
+  attention to the three cross-cutting engines that recur everywhere —
+  *solvers* (finding a plan), *provers* (certifying a plan), and the
+  *centralisation of language toolchains* (a live, already-successful
+  miniature of the N-front-ends + M-back-ends argument).
+. *Part II — The package-management surface*: the concrete operational
+  functionality of mature single-host tools — `apt`, `aptitude`, `nala`,
+  `dnf`, `zypper` — because they are the oldest, most battle-tested
+  declarative/imperative hybrids in existence and their feature set is a
+  checklist the meta-model must be able to express.
+. *Part III — Enterprise automation*: provisioning, configuration
+  management, orchestration, and harnesses — the fleet-scale tools whose
+  fragmentation is the problem ADR-0002 exists to address, and the source of
+  the meta-model's ownership/handoff/provenance concepts.
+. *Part IV — Consequences*: what the survey forces the meta-model to
+  contain, expressed as mappings and design seams.
+
+Scope note: per ADR-0002, this survey informs translation and handoff
+(Phases 2A/2B). It is *not* a competitive analysis for replacing any tool
+listed; replacement is out of scope and sponsor-gated.
+
+Companion:
+link:../../decisions/0003-install-domain-staged-subsumption-ladder.adoc[ADR-0003]
+selects software installation & package management as the *first concrete
+resource domain* (Phase 2C) and fixes a five-tier subsumption ladder for
+absorbing it (manager-less installs first, incumbent managers last). This
+survey is the *landscape grounding* that sits underneath that ladder: Part II
+describes the functionality the ladder's tiers 3–5 must eventually subsume,
+and Part I's foundations explain the machinery (solvers, provers, scoped
+state) the meta-model needs before any tier is attempted.
+
+== Part I — Foundations
+
+=== 1.1 The shape of the space
+
+Every automation tool, from `apt install` to a Kubernetes operator, performs
+the same abstract cycle: *express intent → compare against observed reality →
+compute a change set → effect it → record what happened*. The families differ
+along a small number of axes:
+
+[%autowidth]
+|===
+|Axis |Poles |Examples
+
+|Control paradigm
+|declarative ⇄ imperative
+|Terraform HCL, Puppet catalogs ⇄ shell, Ansible task lists, HAR dispatch
+
+|Scope of a "resource universe"
+|single host ⇄ fleet ⇄ cloud estate
+|apt ⇄ Puppet/Salt ⇄ Terraform
+
+|Convergence style
+|one-shot transaction ⇄ continuous reconciliation
+|package transaction ⇄ Kubernetes controller loop
+
+|Consistency discipline
+|globally-consistent solve ⇄ pinned/content-addressed
+|apt/dnf/zypper ⇄ Nix, Guix, lockfiles
+
+|Who runs it
+|human at a prompt ⇄ agent/daemon ⇄ CI harness
+|nala ⇄ puppet agent ⇄ GitHub Actions
+|===
+
+The meta-model must place any tool on all five axes without distortion. The
+rest of Part I examines the three machinery layers that cut *across* the
+families.
+
+=== 1.2 Solvers — lowering is constraint solving
+
+ADR-0002 names *lowering* (declarative graph → imperative plan) as the
+`terraform plan` move. The survey's first structural finding is that lowering
+is, in the general case, *constraint solving*, and the difficulty is set by
+the constraint language:
+
+* *Package dependency resolution is NP-complete.* Dependencies plus conflicts
+  plus version disjunctions encode Boolean satisfiability (established in the
+  EDOS/Mancoosi research line on Debian-class distributions). Every serious
+  package manager therefore ships or embeds a real solver:
+** `apt` — a heuristic internal resolver; notably, apt also defines *EDSP*,
+   an external-solver protocol through which the whole resolution step can be
+   delegated to a genuine constraint solver (e.g. `aspcud`, Answer Set
+   Programming, via `apt-cudf`). apt thus already treats "the solve" as a
+   pluggable seam — precedent for the meta-model doing the same.
+** `aptitude` — its own resolver that produces *multiple candidate
+   solutions* and lets the user interactively accept, reject, and re-score
+   them: human-in-the-loop solving, discussed further in Part II.
+** `libsolv` (used by `dnf` and `zypper`) — a genuine SAT solver with
+   CDCL-style learning under the hood.
+** *PubGrub* (Dart's `pub`, since adopted by other resolvers such as `uv`) —
+   a CDCL-family algorithm designed so that *unsatisfiability is explained in
+   human-readable terms*. This matters: a solver embedded in an interlingua
+   must be able to justify the plan it emits, or refusal to emit one.
+** Cargo/npm-style resolvers — soften the problem by *allowing duplicate
+   versions* in one graph, trading global consistency for tractability and
+   artefact size.
+* *Nix and Guix dissolve the solve* rather than winning it: content-addressed
+  store paths mean two versions never conflict, so there is no global
+  consistency constraint left to satisfy. Pinning replaces solving.
+* *Terraform's DAG walk is the degenerate easy case*: no disjunction, no
+  conflict — just topological sort with parallelism. Polynomial, which is why
+  provisioning tools rarely talk about "solvers" at all.
+
+*Consequences for the meta-model* — lowering must be a *pluggable solve step*
+whose required power depends on the constraint vocabulary the graph uses
+(mere `before`/`require` edges → toposort; version disjunction + conflict →
+SAT-class); and emitted plans should carry the solver's *explanation* in
+`Provenance`, because every mature solver ecosystem converged on
+explainability (aptitude's interactive solutions, PubGrub's derivations,
+apt's EDSP answers).
+
+=== 1.3 Provers — from finding a plan to certifying it
+
+A solver finds *a* plan; a prover certifies *properties* of plans and of the
+operators they are built from. The properties that recur across the landscape
+are exactly the ones the incumbent tools assert informally and almost never
+check:
+
+* *Idempotence* — running the plan twice equals running it once. Ansible
+  modules, Chef resources, and Puppet types all *promise* this per-operator;
+  none verify it mechanically. Research systems have shown it is checkable
+  (e.g. the PLDI-line work on verifying determinism and idempotence of Puppet
+  configurations), but nothing shipped in the mainstream tools.
+* *Convergence* — repeated application reaches, and then remains at, the
+  desired state. CFEngine's promise theory made this the organising idea of
+  configuration management, but as an operational doctrine, not a checked
+  theorem. Kubernetes reconcilers assume it by construction.
+* *Exactly-once / non-duplication* — an effect is applied by precisely one
+  owner. No mainstream tool states this across a *tool boundary*, because no
+  mainstream tool has tool boundaries — which is precisely the handoff gap.
+* *Non-interference* — two plans touching disjoint resources commute. Assumed
+  silently by every parallel executor.
+
+HAR's position, per ADR-0002, is that these obligations become
+machine-checked at the meta-model layer: the *Idris2 normative spec* carries
+idempotence/convergence invariants, *Ephapax linear types*
+(`src/abi/LinearRouting.eph`) make exactly-once ownership across a
+`HandoffBoundary` a type-level fact, and *proven-FSM* governs the per-resource
+lifecycle (`declared → planned → realised → handed-off`). The survey's point
+is that this is not gold-plating: every family below has a folk-theorem
+version of these properties, and the interlingua is the first artefact
+positioned where proving them pays — at the seam *between* tools, where no
+single tool can.
+
+=== 1.4 Language toolchain centralisation — a live miniature of the thesis
+
+The most instructive recent development in the broad landscape is what
+happened to *language toolchain management*, because it recapitulates
+ADR-0002's N×M argument at small scale and has already played out:
+
+. *Fragmentation phase* — every language grew its own version manager:
+  `rustup`, `ghcup`, `nvm`, `pyenv`, `rbenv`, `sdkman`, `opam`, `juliaup`,
+  `coursier`. N ecosystems × M shell-integration conventions, each with its
+  own shims, env vars, and config file.
+. *Centralisation phase* — `asdf` introduced a single manager with a *plugin
+  interface*: any tool that can answer "list versions / install version V /
+  set active version for scope S" becomes a plugin. Successors (`mise`,
+  `proto`, `aqua`) kept the plugin ontology and improved the engine. This is
+  an interlingua in miniature: a tiny tool-neutral meta-model (tool, version,
+  scope, activation) onto which N ecosystems were mapped, collapsing N×M
+  integrations to N+M. It worked, and it never needed to *replace* `rustup`
+  or `nvm` — plugins often shell out to them.
+. *Unification phase* — Nix/Guix dev environments, devcontainers, and Bazel
+  toolchains go further: the toolchain becomes an ordinary declarative
+  resource inside a general environment description, lockfile-pinned and
+  content-addressed (`flake.lock`, Guix manifests + channels, `.tool-versions`
+  / `mise.toml` at the modest end).
+
+Three lessons transfer directly:
+
+* A *small* meta-model suffices for a whole family if the verbs are chosen
+  well — asdf's plugin ontology is four verbs.
+* *Scope* is a first-class attribute of state (global vs project vs shell
+  session); the meta-model's `State` must be scopable or the toolchain family
+  cannot be expressed.
+* Centralisers won by *wrapping*, not replacing, incumbents — the same
+  "join up the fragments" posture ADR-0002 commits to.
+
+== Part II — The package-management surface
+
+Single-host package managers are the oldest declarative/imperative hybrids:
+the *request* ("have `nginx` installed") is declarative; the *transaction*
+that realises it is an ordered imperative script (unpack → configure in
+dependency order). Their accumulated functionality is a checklist for the
+meta-model. `nala` and `aptitude` get individual treatment because each
+contributes a distinct idea. (In ADR-0003's ladder these managers sit at
+tiers 3–5 — subsumed *last*, precisely so the meta-model is not built in
+their image; this part records what they do, not a commitment to wrap them
+early.)
+
+=== 2.1 The common verb set
+
+Across `apt`, `dnf`, `zypper` (and their kin) the stable operational surface
+is:
+
+[%autowidth]
+|===
+|Verb family |Examples |Meta-model reading
+
+|State change
+|`install`, `remove`, `purge`, `upgrade`, `full-upgrade`, `autoremove`
+|declare desired `State` deltas on `Resource`s
+
+|Query
+|`search`, `show`, `list --installed`, `depends`, `rdepends`
+|read the resource graph and observed `State`
+
+|Plan preview
+|`--dry-run` / `--simulate`, apt's "The following packages will be…" summary
+|lowering exposed to the user *before* execution — every mature tool grew one
+
+|Policy constraint
+|`hold`, pinning/priorities, version locks, `forbid-version`
+|constraints injected into the solve, distinct from desired state
+
+|Acquisition
+|`download`, mirror selection, parallel fetch
+|`Provider` mechanics, separable from state change
+
+|History
+|`dnf history`, `zypper` + snapshots, `nala history`
+|the plan journal — see 2.3/2.4
+|===
+
+The plan-preview row deserves emphasis: package managers independently
+evolved the same "show the plan, then apply it" interaction that Terraform
+made famous. The lowering artefact is *user-facing* in every mature tool.
+
+=== 2.2 aptitude — the solver made conversational, and intent made explicit
+
+`aptitude` contributes two ideas the meta-model should keep:
+
+* *Interactive, steerable resolution.* When the dependency solve has no
+  clean answer, aptitude enumerates candidate solutions ("remove X / hold Y /
+  install Z from…") and lets the user accept, reject, or re-weight them,
+  iterating until a solution is approved. That is human-in-the-loop
+  constraint solving with the solver's alternatives as first-class,
+  presentable objects — precisely the shape a HAR plan review/approval step
+  should take, and a concrete argument for plans (and *rejected candidate
+  plans*) being representable in the interchange dialect.
+* *The auto/manual distinction.* Every installed package is marked either
+  *manually requested* or *automatically installed to satisfy dependencies*;
+  `autoremove` is then a mark-and-sweep garbage collection rooted at the
+  manual marks. This is the cleanest existing implementation of a distinction
+  the meta-model must carry: *directly-intended state* versus *derived state*
+  that exists only in service of intent. In meta-model terms it is a
+  `Provenance` fact ("why does this resource exist?") with operational
+  consequences (derived resources are reclaimable when unreferenced).
+
+Secondary but notable: aptitude's search-pattern language (`?depends(…)`,
+`?broken`, `~n…`) is a query DSL over the resource graph — evidence that once
+a resource graph exists, users demand a way to *query* it, which the
+interlingua should anticipate rather than improvise later.
+
+=== 2.3 nala — UX, history, and undo as product features
+
+`nala` is a front-end over the same libapt machinery apt uses — same solver,
+same archives — and is nonetheless widely adopted. What it adds is entirely
+in presentation and record-keeping:
+
+* *Readable transactions* — side-by-side, colour-coded summaries of what a
+  transaction will do; the lowering artefact rendered for humans.
+* *Parallel downloads and mirror ranking* (`nala fetch`) — `Provider`
+  optimisation without touching resolution semantics.
+* *`nala history`, with `undo`/`redo`* — every transaction is journalled with
+  an ID and can be replayed or inverted. Undo of a package transaction is
+  *inverse-plan synthesis*: compute the plan that returns to the prior state.
+  That is a restricted, concrete instance of ADR-0002's *lifting* problem
+  (action sequence → state delta → inverse actions), working in production on
+  the easiest domain.
+
+The lesson is sharp because nala adds *zero* solving power: history,
+provenance, and plan presentation are not garnish — they are sufficient
+reason for a tool to exist. The interchange dialect should treat the journal
+and the human-renderable plan as first-class outputs, not debug artefacts.
+
+=== 2.4 Transactionality and rollback
+
+The family also maps the spectrum of *recovery* semantics the meta-model must
+express:
+
+* `apt` — no native transaction history; failed mid-transaction states are
+  repaired forward (`dpkg --configure -a`), not rolled back.
+* `dnf history rollback` / `undo` — journal-based inverse plans (nala-style,
+  older pedigree).
+* `zypper` with snapper/btrfs — filesystem snapshots bracket transactions:
+  checkpoint-based rollback rather than inverse plans.
+* `transactional-update`, `rpm-ostree` — the transaction builds a new
+  immutable image/snapshot and switches atomically; rollback is a pointer
+  flip. Convergence by replacement rather than mutation — the single-host
+  analogue of immutable infrastructure.
+
+These are four distinct answers to "what if the plan fails halfway?" —
+repair-forward, inverse plan, checkpoint restore, atomic switch. Handoff
+(2B) needs checkpoints anyway (`HandoffBoundary` is defined as *linear
+ownership transfer with a checkpoint*), so the meta-model gets rollback
+vocabulary almost for free — but it must not hard-code *one* of the four
+semantics, because the surveyed tools legitimately differ.
+
+== Part III — Enterprise automation
+
+=== 3.1 Provisioning
+
+*Terraform / OpenTofu* is the reference point, and its anatomy maps onto the
+meta-model with almost embarrassing directness:
+
+* the *state file* is a persistent record of *realised* `State` (distinct
+  from both desired-in-code and observed-in-cloud — three states, exactly the
+  desired/observed/realised triple in the meta-model);
+* `plan` is lowering, `apply` is execution, drift detection is the
+  observed-vs-recorded diff;
+* *providers* are back-end adapters — the M side of N×M;
+* `import` is *lifting* — adopting an existing unmanaged resource into
+  desired state — and its notorious awkwardness (one resource at a time,
+  attributes reconstructed imperfectly) is field evidence for ADR-0002's
+  warning that lifting is lossy and hard;
+* the state file is also Terraform's biggest operational liability (locking,
+  secrets, team contention) — a warning about what a naïvely centralised
+  realised-state record becomes at fleet scale.
+
+Around it: *Pulumi* demonstrates the duality inside one tool — imperative
+general-purpose languages *construct* a declarative resource graph, which is
+then planned and applied like Terraform's; the paradigm boundary is not a
+tool boundary. *CloudFormation/Bicep* show hosted, service-side lowering.
+*Packer* and *cloud-init* cover the imperative edges of provisioning (image
+bake, first boot) that estates always retain — front-end candidates, not
+embarrassments.
+
+=== 3.2 Configuration management
+
+The four incumbents divide the design space cleanly, and ADR-0002's flagship
+demo (Puppet in → Salt out) spans the widest gap:
+
+* *Puppet* — the purest declarative graph: manifests compile to a per-node
+  *catalog* whose resources are ordered by `before`/`require`/`notify`/
+  `subscribe` edges (the direct source of the meta-model's `Dependency` edge
+  vocabulary). An agent converges each node on a cycle; PuppetDB is a
+  queryable store of observed state and catalogs — an existing, deployed
+  "observed `State` + graph" database. *Exported resources* let one node's
+  catalog declare resources realised on another — cross-node dependency, the
+  intra-tool ancestor of cross-*tool* handoff.
+* *Salt* — both paradigms natively: declarative *states* with requisites
+  (`require`, `watch`, `onchanges`) plus imperative execution modules and
+  *orchestrate* runbooks, over an event bus with reactors. As the handoff
+  *target*, Salt is forgiving precisely because it has both surfaces to land
+  on.
+* *Ansible* — imperative task lists (explicit order, push-mode) over
+  *idempotent modules*, with declarative texture recovered via check mode
+  (plan preview again), handlers (`notify` again), and inventory/facts
+  (observed state). Its enormous module library is effectively a catalogue of
+  per-operator effect models — raw material for the per-op effect model that
+  lifting requires.
+* *Chef / CFEngine* — convergent resources embedded in an imperative host
+  language (Chef), and promise-theoretic autonomous convergence (CFEngine):
+  the historical sources of the convergence doctrine 1.3 discussed.
+
+The federation problem is visible in the field: real estates run two or more
+of these simultaneously (plus Terraform), with ownership divided by folklore
+("the DB hosts are Puppet's, don't let Ansible touch them"). That folklore is
+an informal `Owner`/`HandoffBoundary` assignment nobody can query or check —
+the meta-model's job is to make it a datum.
+
+=== 3.3 Orchestration and continuous convergence
+
+Kubernetes-style controllers close the loop the one-shot tools leave open:
+desired state lives in an API server, and a *reconciler* runs lowering
+continuously — observe, diff, act, forever. GitOps (Flux, Argo CD) puts the
+desired state in git, which quietly solves provenance (commits, authors,
+review trails) for the slice of the world it covers. The meta-model should
+treat "reconciliation" not as a different kind of tool but as a *policy on
+frequency*: a one-shot apply and a controller loop run the *same* lowered
+plan shape on different cadences. That framing keeps the IR unified across
+Parts II and III.
+
+=== 3.4 Harnesses
+
+"Harness" covers the machinery that *invokes* automation and *judges* it —
+the layer HAR itself lives in:
+
+* *CI/CD pipelines* (GitHub Actions, GitLab CI, Jenkins) — imperative DAGs
+  of steps with triggers, environments, and approvals. Two meta-model
+  contributions: *gated edges* (a `Dependency` edge conditioned on an
+  approval — change windows and manual gates are enterprise reality), and
+  *artefact provenance* — the supply-chain world (SLSA, signed attestations)
+  has already built interchange formats for "what produced this and how",
+  which the `Provenance` schema should align with rather than duplicate.
+* *Test harnesses* — the setup → exercise → observe → teardown cycle, i.e. a
+  plan whose purpose is *observation*, executed against a `State` that must
+  be restored afterwards. Expressible as a plan with a mandatory compensating
+  suffix — worth keeping expressible, since verification runs (2A's
+  round-trip gate) have exactly this shape.
+* *RPA* (rpa-elysium, HAR's first-class target) — imperative UI-level
+  automation: brittle, long-running, checkpoint-hungry, and rarely
+  idempotent. RPA is the *stress case* for handoff — a half-finished bot run
+  is a partially-realised estate in miniature — and having it as a native
+  `AutomationTarget` keeps the meta-model honest about non-idempotent,
+  non-declarative effects that still need `State`, `Owner`, and resumability.
+
+=== 3.5 What "enterprise" actually adds
+
+Comparing Parts II and III, the delta is not sophistication of solving —
+package managers have the *hardest* solves — but the social layer:
+
+[%autowidth]
+|===
+|Enterprise concern |Meta-model home
+
+|Fleet scale and partial application (some hosts converged, some not)
+|`State` per resource *per scope*, not per estate
+
+|Team and tool ownership boundaries
+|`Owner`, `HandoffBoundary` as queryable data, not folklore
+
+|Compliance and audit ("who changed what, why, under which approval")
+|`Provenance` — load-bearing, aligned with supply-chain attestation formats
+
+|Drift (reality diverging from record)
+|desired/observed/realised as three distinct `State` facets
+
+|Change control (windows, approvals, plan review)
+|plans as persistent, reviewable, approvable interchange objects
+
+|Handoff between tools and teams
+|linear ownership transfer + checkpoint (Ephapax-typed)
+|===
+
+Single-host tools need almost none of this because a host has one owner and
+one journal. The meta-model's distinctive concepts — the ones with no
+counterpart in apt — are exactly the enterprise ones, which is the right
+sanity check: the interlingua earns its keep at the seams.
+
+== Part IV — Consequences for the meta-model
+
+=== 4.1 Concept mapping
+
+One table, all families, meta-model terms — the working core of this survey:
+
+[%autowidth]
+|===
+|Meta-model concept |Packages (apt/aptitude/nala) |Toolchains (asdf/mise/Nix) |Provisioning (Terraform) |Config mgmt (Puppet/Salt/Ansible) |Harnesses (CI/RPA)
+
+|`Resource`
+|package@version
+|tool@version per scope
+|cloud resource
+|file/service/user/pkg resource
+|job, bot run, artefact
+
+|`Effect`
+|install/remove/configure
+|install/activate
+|create/update/delete
+|converge resource
+|execute step
+
+|`Dependency`
+|Depends/Conflicts/Breaks
+|plugin ordering (trivial)
+|implicit refs → DAG
+|before/require/notify/watch
+|step DAG, triggers, gates
+
+|`State` (desired/observed/realised)
+|selections / dpkg status / journal
+|version file / shims / store
+|code / cloud / state file
+|manifest / facts / reports
+|pipeline def / run state / artefacts
+
+|`Owner`
+|auto vs manual mark
+|scope (global/project/shell)
+|state file + workspace
+|folklore (which tool owns which host)
+|pipeline/approver identity
+
+|`Provider`
+|archives, mirrors
+|plugins, channels
+|provider plugins
+|modules/types
+|runners, target APIs
+
+|`HandoffBoundary`
+|— (single owner)
+|manager wraps incumbent (rustup under asdf)
+|`import` / state moves
+|exported resources (intra-tool only)
+|artefact passing between stages
+
+|`Provenance`
+|history/journal (nala, dnf)
+|lockfiles
+|state versions, plan files
+|reports, PuppetDB
+|attestations, SLSA, run logs
+|===
+
+Empty and weak cells are the product surface: no surveyed tool fills the
+`HandoffBoundary` column across a *tool* boundary — that cell is HAR's.
+
+=== 4.2 Design seams the survey mandates
+
+. *Pluggable solve* (1.2) — lowering declares the constraint vocabulary it
+  needs; toposort for edge-only graphs, SAT-class where disjunction/conflict
+  appear. Follow apt's EDSP precedent: the solver is behind a protocol, not
+  welded in.
+. *Explanations in plans* (1.2, 2.2) — a plan carries why-this-plan
+  (solver derivation) and, on failure, why-no-plan. Candidate plans and
+  rejections are representable (aptitude's interaction shape).
+. *Prover obligations per operator* (1.3) — each primitive op in the low
+  IR declares idempotence/convergence claims; the Idris2 track checks them
+  where possible, records them as assumptions where not.
+. *Intent provenance* (2.2) — every resource records whether it is directly
+  intended or derived (aptitude's auto/manual), enabling GC of derived
+  state.
+. *Journal + inverse plans as first-class* (2.3, 2.4) — the transaction
+  journal is part of the interchange dialect; rollback vocabulary covers all
+  four recovery semantics (repair-forward, inverse plan, checkpoint restore,
+  atomic switch) without privileging one.
+. *Scoped state* (1.4) — `State` is always relative to a scope (shell,
+  project, host, fleet); partial application is representable, not an error.
+. *Cadence as policy* (3.3) — one-shot apply and continuous reconciliation
+  are the same plan under different scheduling policy.
+. *Gated dependencies and attestation-aligned provenance* (3.4) — approval
+  gates are edge attributes; `Provenance` aligns with existing supply-chain
+  attestation formats instead of inventing a parallel scheme.
+. *Non-idempotent effects are admitted, not denied* (3.4) — RPA-class
+  operations get honest typing (no idempotence claim, checkpoint-required)
+  rather than being forced into a convergence costume.
+
+=== 4.3 What this survey does *not* conclude
+
+No finding above implies building a better apt, Terraform, or Puppet.
+Each family is treated as a *front-end/back-end candidate and a source of
+design precedent*. The strongest single precedent is also the humblest:
+`asdf` federated a fragmented family with a four-verb meta-model and
+wrapper-not-replacement posture, and it worked. That is the existence proof,
+at miniature scale, for the whole programme.

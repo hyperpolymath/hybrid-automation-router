@@ -1,1 +1,7 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+// Owner: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+
 = Ontologies Theory
+
+* link:automation-landscape-survey.adoc[The Automation Landscape — a Survey Grounding the Meta-Model] — Phase-2A groundwork for ADR-0002: solvers, provers, and toolchain centralisation (foundations); the package-management surface (apt, aptitude, nala); enterprise automation (provisioning, configuration management, harnesses); and the concept mapping onto the automation meta-model.
