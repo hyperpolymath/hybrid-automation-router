@@ -33,7 +33,7 @@ toc::[]
 
 NOTE: Phase 2 was reprioritised (see link:docs/decisions/0002-automation-interlingua-declarative-imperative.adoc[ADR-0002]). The former "Advanced Routing" phase is now Phase 3, and subsequent phases renumber accordingly.
 
-The repository contains a Rust workspace with 7 crates (`har-core`, `har-config`, `har-dispatch`, `har-health`, `har-metrics`, `har-router`, `har-cli`) plus ABI/FFI *scaffold* (Idris2 + Zig — type stubs, not yet compiled or wired) and an Ephapax linear-types spec. A Gleam backend service and PanLL monitoring panels are planned but not yet present.
+The repository contains a Rust workspace with 8 crates (`har-core`, `har-config`, `har-dispatch`, `har-health`, `har-metrics`, `har-router`, `har-cli`, `har-abi`) plus ABI/FFI *scaffold* (Idris2 + Zig — type stubs, not yet compiled or wired) and an Ephapax linear-types spec. A Gleam backend service and PanLL monitoring panels are planned but not yet present.
 
 ---
 

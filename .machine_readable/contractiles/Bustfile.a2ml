@@ -1,0 +1,63 @@
+# SPDX-License-Identifier: MPL-2.0
+# Bustfile — failure mode contractile for hybrid-automation-router
+# Author: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# Verb:      bust
+# Semantics: Every declared failure mode must have a working recovery path
+#            that has been exercised. Status moves:
+#              declared → drilled (probe run) → verified (recovery confirmed)
+#              or → failing (recovery broken)
+
+@abstract:
+Failure modes for hybrid-automation-router (HAR): the routing engine's
+no-target, unhealthy-target, and queue-backpressure paths, plus contractile
+format integrity. Probes reference the repository's real test surface so a
+drill is a runnable command, not a fiction.
+@end
+
+## Failure Modes
+
+### routing-no-eligible-target
+- class: routing
+- description: An event arrives whose category/capabilities no registered target can satisfy
+- injection_probe: "cargo test -p har-router test_no_matching_target"
+- recovery_probe: "cargo test -p har-dispatch"
+- expected_recovery_time_seconds: 5
+- status: declared
+- notes: route() must return Error::NoTarget (never panic); dispatch layer owns the dead-letter path
+
+### primary-target-unhealthy
+- class: routing
+- description: The preferred target is unhealthy and traffic must move to a fallback
+- injection_probe: "cargo test -p har-router failover_primary_and_ordered_fallback_chain"
+- recovery_probe: "cargo test -p har-router"
+- expected_recovery_time_seconds: 5
+- status: declared
+- notes: Failover strategy emits the primary plus an ordered fallback chain in alternatives
+
+### dispatch-queue-backpressure
+- class: dispatch
+- description: The target queue saturates and backpressure must engage without event loss
+- injection_probe: "cargo test -p har-dispatch"
+- recovery_probe: "cargo test --workspace"
+- expected_recovery_time_seconds: 30
+- status: declared
+- notes: Queue semantics follow the proven-queueconn ABI (src/abi/ProvenQueue.idr); dead-letter handling covers rejects
+
+### contractile-parse-error
+- class: contractile_format
+- description: A contractile file fails to parse due to syntax errors
+- injection_probe: "echo 'invalid syntax' >> .machine_readable/contractiles/Intentfile.a2ml"
+- recovery_probe: "git checkout .machine_readable/contractiles/Intentfile.a2ml"
+- expected_recovery_time_seconds: 5
+- status: declared
+- notes: All .a2ml files should be valid A2ML; the dogfood gate validates manifests in CI
+
+### workflow-pin-drift
+- class: ci
+- description: A pinned reusable-workflow SHA in .github/workflows goes stale or breaks (the d135b05 class)
+- injection_probe: "grep -rn 'hyperpolymath/standards' .github/workflows/ | head -5"
+- recovery_probe: "gh run list --branch main --limit 5"
+- expected_recovery_time_seconds: 600
+- status: declared
+- notes: Recovery is a pin bump to a known-green standards SHA; see estate CI-red master-cause records

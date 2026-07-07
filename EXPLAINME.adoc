@@ -28,7 +28,7 @@ production deployment with live RPA Elysium targets is not yet validated.
 | Path | Proves
 
 | `Cargo.toml`
-| 7-crate workspace (har-core through har-cli), Rust 2021 edition
+| 8-crate workspace (har-core through har-abi), Rust 2021 edition
 
 | `src/abi/ProvenFSM.idr`
 | Idris2 ABI scaffold for the router lifecycle state machine (type stubs)

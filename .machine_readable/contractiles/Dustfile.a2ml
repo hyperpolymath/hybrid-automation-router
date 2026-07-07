@@ -1,0 +1,56 @@
+# SPDX-License-Identifier: MPL-2.0
+# Dustfile — Cleanup and hygiene contract for hybrid-automation-router
+# Author: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# Verb:      dust
+# Semantics: What should be cleaned up. Housekeeping, not blockers.
+
+@abstract:
+Cleanup and hygiene items for hybrid-automation-router (HAR). Maintenance
+tasks that keep the repository tidy; none of these block CI on their own.
+@end
+
+## Stale Files
+
+### no-build-artifacts-tracked
+- description: No Cargo build artifacts tracked in git
+- run: test -z "$(git ls-files target/ 2>/dev/null)"
+- severity: warning
+
+### no-merge-leftovers
+- description: No merge/patch leftovers (*.orig, *.rej) anywhere
+- run: test -z "$(find . -name '*.orig' -o -name '*.rej' 2>/dev/null | grep -v '^./.git/')"
+- severity: warning
+
+### no-example-placeholders
+- description: No example placeholder files (EXAMPLE-, SAMPLE-) in contractiles/
+- run: test -z "$(find .machine_readable/contractiles/ -name 'EXAMPLE-*' -o -name 'SAMPLE-*' 2>/dev/null)"
+- severity: warning
+
+## Format Duplicates
+
+### no-duplicate-readme-format
+- description: Only one README format in contractiles/ (.adoc canonical)
+- run: test ! -f .machine_readable/contractiles/README.md
+- severity: info
+
+## Naming Hygiene
+
+### no-deprecated-6a2-references
+- description: No prose/path references to the deprecated 6a2 name outside Cargo.lock checksums
+- run: test -z "$(grep -rl '6a2' --exclude-dir=.git --exclude-dir=target --exclude=Cargo.lock --exclude=Dustfile.a2ml --exclude=Mustfile.a2ml . 2>/dev/null)"
+- severity: warning
+- notes: Canon is descriptiles (see standards/CANONICAL-NAMES.adoc); migrate on sight
+
+### panels-are-panels
+- description: Dashboard panels are called "panels", never "panes"
+- run: test -z "$(grep -rniw 'panes' docs/ panels/ 2>/dev/null | grep -iv 'window panes')"
+- severity: info
+
+## Documentation Hygiene
+
+### template-placeholder-trend
+- description: Track unexpanded {{...}} template markers outside deliberate exemplars
+- run: sh -c "grep -rl '{{' docs/ 2>/dev/null | wc -l"
+- severity: info
+- notes: Which files stay as literal exemplars is an open owner decision; this only trends the count

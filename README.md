@@ -91,8 +91,8 @@ har route filesystem --target rpa-elysium
 
 | Layer | Technology | State |
 |----|----|----|
-| **Core engine** | Rust — 7 crates (har-core, har-config, har-dispatch, har-health, har-metrics, har-router, har-cli) | ✅ implemented + tested |
-| **ABI** | Idris2 (`src/abi/*.idr`) — router lifecycle + queue types | ⚠ scaffold (type stubs; not yet compiled/proven or wired to Rust) |
+| **Core engine** | Rust — 8 crates (har-core, har-config, har-dispatch, har-health, har-metrics, har-router, har-cli, har-abi) | ✅ implemented + tested |
+| **ABI** | Idris2 (`src/abi/*.idr`) — router lifecycle + queue types; shared queue ABI bound in Rust via `har-abi` | ⚠ Idris2 stubs not yet compiled/proven; `har-abi` implemented + tested |
 | **Linear types** | Ephapax (`src/abi/LinearRouting.eph`) — exactly-once delivery | ⚠ spec only |
 | **FFI** | Zig (`ffi/zig/`) — C-compatible boundary | ⚠ scaffold (not invoked from Rust) |
 | **Backend** | Gleam (BEAM — event bus, persistence) | ☐ planned (not started) |
