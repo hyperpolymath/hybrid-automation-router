@@ -37,6 +37,16 @@ Scope note: per ADR-0002, this survey informs translation and handoff
 (Phases 2A/2B). It is *not* a competitive analysis for replacing any tool
 listed; replacement is out of scope and sponsor-gated.
 
+Companion:
+link:../../decisions/0003-install-domain-staged-subsumption-ladder.adoc[ADR-0003]
+selects software installation & package management as the *first concrete
+resource domain* (Phase 2C) and fixes a five-tier subsumption ladder for
+absorbing it (manager-less installs first, incumbent managers last). This
+survey is the *landscape grounding* that sits underneath that ladder: Part II
+describes the functionality the ladder's tiers 3–5 must eventually subsume,
+and Part I's foundations explain the machinery (solvers, provers, scoped
+state) the meta-model needs before any tier is attempted.
+
 == Part I — Foundations
 
 === 1.1 The shape of the space
@@ -192,7 +202,10 @@ the *request* ("have `nginx` installed") is declarative; the *transaction*
 that realises it is an ordered imperative script (unpack → configure in
 dependency order). Their accumulated functionality is a checklist for the
 meta-model. `nala` and `aptitude` get individual treatment because each
-contributes a distinct idea.
+contributes a distinct idea. (In ADR-0003's ladder these managers sit at
+tiers 3–5 — subsumed *last*, precisely so the meta-model is not built in
+their image; this part records what they do, not a commitment to wrap them
+early.)
 
 === 2.1 The common verb set
 
