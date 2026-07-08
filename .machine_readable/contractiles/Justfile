@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MPL-2.0
-# Copyright (c) {{CURRENT_YEAR}} {{AUTHOR}} ({{OWNER}}) <{{AUTHOR_EMAIL}}>
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
 # RSR Standard Justfile Template
 # https://just.systems/man/en/
@@ -19,7 +19,7 @@ set positional-arguments := true
 import? "contractile.just"
 
 # Project metadata — customize these
-project := "{{PROJECT_NAME}}"
+project := "hybrid-automation-router"
 version := "0.1.0"
 tier := "infrastructure"  # 1 | 2 | infrastructure
 
@@ -56,7 +56,7 @@ info:
 # INIT — Bootstrap a new project from this template
 # ═══════════════════════════════════════════════════════════════════════════════
 
-# Interactive project bootstrap — replaces all {{PLACEHOLDER}} tokens
+# Interactive project bootstrap — replaces all REMOVED tokens
 init:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -501,8 +501,8 @@ container-init:
     read -rp "Primary port [8080]: " _PORT
     PORT="${_PORT:-8080}"
 
-    read -rp "Container registry [ghcr.io/${OWNER:-{{OWNER}}}]: " _REGISTRY
-    REGISTRY="${_REGISTRY:-ghcr.io/${OWNER:-{{OWNER}}}}"
+    read -rp "Container registry [ghcr.io/${OWNER:-hyperpolymath}]: " _REGISTRY
+    REGISTRY="${_REGISTRY:-ghcr.io/${OWNER:-hyperpolymath}}"
 
     echo ""
     echo "  Service: $SERVICE_NAME"
@@ -831,7 +831,7 @@ test-matrix suite="unit" verbosity="normal" parallel="true":
     @echo "Test matrix: suite={{suite}} verbosity={{verbosity}} parallel={{parallel}}"
 
 # Container matrix: [build|run|push|shell|scan] x [registry] x [tag]
-container-matrix action="build" registry="ghcr.io/{{OWNER}}" tag="latest":
+container-matrix action="build" registry="ghcr.io/hyperpolymath" tag="latest":
     @echo "Container matrix: action={{action}} registry={{registry}} tag={{tag}}"
 
 # CI matrix: [lint|test|build|security|all] x [quick|full]
