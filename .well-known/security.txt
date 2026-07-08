@@ -2,10 +2,10 @@
 # RFC 9116 - security.txt
 # https://securitytxt.org/
 
-Contact: mailto:{{SECURITY_EMAIL}}
-Expires: {{CURRENT_YEAR}}-12-31T23:59:59.000Z
-Encryption: {{PGP_KEY_URL}}
+Contact: mailto:security@example.com
+Expires: 2026-12-31T23:59:59.000Z
+Encryption: https://keys.openpgp.org/vks/v1/by-fingerprint/0000000000000000000000000000000000000000
 Preferred-Languages: en
-Canonical: https://{{FORGE}}/{{OWNER}}/{{REPO}}/.well-known/security.txt
-Policy: https://{{FORGE}}/{{OWNER}}/{{REPO}}/blob/main/SECURITY.md
-Hiring: https://{{WEBSITE}}/careers
+Canonical: https://github.com/hyperpolymath/hybrid-automation-router/.well-known/security.txt
+Policy: https://github.com/hyperpolymath/hybrid-automation-router/blob/main/SECURITY.md
+Hiring: https://https://github.com/hyperpolymath/careers

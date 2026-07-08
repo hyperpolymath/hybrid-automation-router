@@ -1,34 +1,34 @@
-= {{PROJECT_NAME}} - Citation Guide
+= hybrid-automation-router - Citation Guide
 :toc:
 
 == BibTeX
 
 [source,bibtex]
 ----
-@software{{{PROJECT_NAME}}_{{CURRENT_YEAR}},
-  author = {{{AUTHOR_LAST}}, {{AUTHOR_FIRST}}},
-  title = {{{PROJECT_NAME}}},
-  year = {{{CURRENT_YEAR}}},
-  url = {https://github.com/{{OWNER}}/{{PROJECT_NAME}}},
+@software{hybrid-automation-router_2026,
+  author = {Jewell, Jonathan},
+  title = {hybrid-automation-router},
+  year = {2026},
+  url = {https://github.com/hyperpolymath/hybrid-automation-router},
   license = {MPL-2.0}
 }
 ----
 
 == Harvard Style
 
-{{AUTHOR_LAST}}, {{AUTHOR_INITIALS}} ({{CURRENT_YEAR}}) _{{PROJECT_NAME}}_ [Computer software]. Available at: https://github.com/{{OWNER}}/{{PROJECT_NAME}}
+Jewell, J. (2026) _hybrid-automation-router_ [Computer software]. Available at: https://github.com/hyperpolymath/hybrid-automation-router
 
 == OSCOLA
 
-{{AUTHOR}}, '{{PROJECT_NAME}}' ({{CURRENT_YEAR}}) <https://github.com/{{OWNER}}/{{PROJECT_NAME}}>
+Jonathan D.A. Jewell, 'hybrid-automation-router' (2026) <https://github.com/hyperpolymath/hybrid-automation-router>
 
 == MLA
 
-{{AUTHOR_LAST}}, {{AUTHOR_FIRST}} "{{PROJECT_NAME}}." {{CURRENT_YEAR}}, github.com/{{OWNER}}/{{PROJECT_NAME}}.
+Jewell, Jonathan "hybrid-automation-router." 2026, github.com/hyperpolymath/hybrid-automation-router.
 
 == APA 7
 
-{{AUTHOR_LAST}}, {{AUTHOR_INITIALS}} ({{CURRENT_YEAR}}). _{{PROJECT_NAME}}_ [Computer software]. GitHub. https://github.com/{{OWNER}}/{{PROJECT_NAME}}
+Jewell, J. (2026). _hybrid-automation-router_ [Computer software]. GitHub. https://github.com/hyperpolymath/hybrid-automation-router
 
 == See Also
 
