@@ -18,6 +18,7 @@ on:
     - cron: '0 6 * * 1'  # Weekly on Monday
 
 permissions: read-all
+  actions: read
 
 jobs:
   audit:

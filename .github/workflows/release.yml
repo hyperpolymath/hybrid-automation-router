@@ -14,6 +14,7 @@ on:
       - 'v*'
 
 permissions: read-all
+  actions: read
 
 jobs:
   build:
