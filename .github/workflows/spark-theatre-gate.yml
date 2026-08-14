@@ -20,7 +20,7 @@ jobs:
     # `timeout-minutes` is NOT permitted here and makes GitHub reject the whole
     # workflow (startup_failure on every push). The timeout belongs inside the
     # reusable workflow in hyperpolymath/standards, not on the caller.
-    uses: hyperpolymath/standards/.github/workflows/spark-theatre-gate.yml@f2f8e6791b09f1f498f01b798e4670a1ebc9c986
+    uses: hyperpolymath/standards/.github/workflows/spark-theatre-gate.yml@5b1d00229e5e8c0c0fbfedc7e80f37ea50f49236
     with:
       paths: "."
       enforce_zero_contract: false
