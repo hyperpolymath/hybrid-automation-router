@@ -27,7 +27,6 @@ module RoutingInvariants
 
 import ProvenQueue
 import Data.List.Elem
-import Data.Nat
 
 %default total
 
