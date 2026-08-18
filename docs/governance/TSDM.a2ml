@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: MPL-2.0
-# TSDM standard — machine-readable specification.
-# A2ML Record dialect (standards/a2ml/RECORD-DIALECT-SPEC.adoc v1.0.0).
+name = "tsdm-standard"
+---
+### [TSDM_SPEC]
+id: "tsdm-standard"
+version: "1.0.0"
 
 [metadata]
 name = "tsdm-standard"

@@ -3,15 +3,10 @@
 # Component Readiness Grades (CRG) — machine-readable specification.
 # A2ML Record dialect (standards/a2ml/RECORD-DIALECT-SPEC.adoc v1.0.0).
 
-[metadata]
+; Component Readiness Grades (CRG) — Machine-readable specification
+; Format: A2ML (AI-to-Machine Language)
+; Standard: CRG v1.0
 name = "crg-criteria"
-title = "Component Readiness Grades"
-abbreviation = "CRG"
-version = "1.0"
-date = "2026-02-28"
-author = "Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
-license = "MPL-2.0"
-family = "RSR"
 
 [[grades]]
 code = "X"
