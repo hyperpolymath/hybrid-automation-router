@@ -1,13 +1,8 @@
-<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
-<!-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk> -->
-<!-- TOPOLOGY.md — Project architecture map and completion dashboard -->
-<!-- Last updated: 2026-03-17 -->
+== Hybrid Automation Router — Project Topology
 
-# Hybrid Automation Router — Project Topology
+=== System Architecture
 
-## System Architecture
-
-```
+....
                         ┌─────────────────────────────────────────┐
                         │            EVENT SOURCES                │
                         │   (Cron, Webhooks, File Watchers, CLI)  │
@@ -60,11 +55,11 @@
                         │  Justfile Automation  .machine_readable/│
                         │  Multi-Forge Hub      0-AI-MANIFEST.a2ml│
                         └─────────────────────────────────────────┘
-```
+....
 
-## Completion Dashboard
+=== Completion Dashboard
 
-```
+....
 COMPONENT                          STATUS              NOTES
 ─────────────────────────────────  ──────────────────  ─────────────────────────────────
 RUST WORKSPACE
@@ -104,11 +99,11 @@ REPO INFRASTRUCTURE
 
 ─────────────────────────────────────────────────────────────────────────────
 OVERALL:                            █████░░░░░  ~50%   Phase 1 Near Complete (v0.2.0)
-```
+....
 
-## Key Dependencies
+=== Key Dependencies
 
-```
+....
 RSR Standards ───► Infrastructure ───► Core Framework ───► Targets
      │                 │                   │                 │
      ▼                 ▼                   ▼                 ▼
@@ -116,16 +111,17 @@ Language Policy ► CI Workflows ─────► proven-servers ──► rpa
                                           │
                                           ▼
                                      PanLL Panels
-```
+....
 
-## Update Protocol
+=== Update Protocol
 
 This file is maintained by both humans and AI agents. When updating:
 
-1. **After completing a component**: Change its bar and percentage
-2. **After adding a component**: Add a new row in the appropriate section
-3. **After architectural changes**: Update the ASCII diagram
-4. **Date**: Update the `Last updated` comment at the top of this file
+[arabic]
+. *After completing a component*: Change its bar and percentage
+. *After adding a component*: Add a new row in the appropriate section
+. *After architectural changes*: Update the ASCII diagram
+. *Date*: Update the `+Last updated+` comment at the top of this file
 
-Progress bars use: `█` (filled) and `░` (empty), 10 characters wide.
-Percentages: 0%, 10%, 20%, ... 100% (in 10% increments).
+Progress bars use: `+█+` (filled) and `+░+` (empty), 10 characters wide.
+Percentages: 0%, 10%, 20%, … 100% (in 10% increments).
