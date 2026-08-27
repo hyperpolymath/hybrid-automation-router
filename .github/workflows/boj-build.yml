@@ -1,5 +1,5 @@
-# This workflow is managed by gh actions-lock.
 # SPDX-License-Identifier: MPL-2.0
+# This workflow is managed by gh actions-lock.
 # This workflow is managed by gh actions-lock.
 name: BoJ Server Build Trigger
 on:
@@ -18,5 +18,5 @@ jobs:
           # Send a secure trigger to boj-server to build this repository
           curl -X POST "http://boj-server.local:7700/cartridges/ssg-mcp/invoke"             -H "Content-Type: application/json"             -d "{\"repo\": \"${{ github.repository }}\", \"branch\": \"${{ github.ref_name }}\", \"engine\": \"casket\\"}"}
         continue-on-error: true
-permissions: read-all
+permissions:
   actions: read
