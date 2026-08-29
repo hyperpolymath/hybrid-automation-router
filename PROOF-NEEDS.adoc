@@ -85,7 +85,7 @@ theorem. Not on the critical path today.
 trace are a coalgebraic equality failure. |*L3: RECORD-AS-NOT-RELEVANT*
 today — there is no estate-wide echo-types codec for `+DispatchCount+`
 and inventing one for this single use-site would be scope-creep. Revisit
-if a second consumer appears (e.g. rpa-elysium-side replay
+if a second consumer appears (e.g. rpa-elysium-side replay
 verification).
 
 |RI-3 (deterministicSelection) |L1 only (no echo involved). |*Not

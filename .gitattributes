@@ -5,6 +5,7 @@
 
 # Source
 *.rs    text eol=lf diff=rust
+tests/fixtures/bom-detection/normal-whitespace.rs text eol=crlf
 *.ex    text eol=lf diff=elixir
 *.exs   text eol=lf diff=elixir
 *.jl    text eol=lf

@@ -113,4 +113,5 @@ Run `./test-linter.sh` to verify.
 - Issue: hyperpolymath/empty-linter#70
 - POSIX text processing: BOMs are metadata, not content
 - grep behavior: Leading BOM stripped in UTF-8 mode
-- Unicode: U+FEFF ZERO WIDTH NO-BREAK SPACE (deprecated as BOM, use U+200B instead)
+- Unicode: U+FEFF remains valid as a BOM; its in-text word-joining use is
+  deprecated, and new text should use U+2060 WORD JOINER instead

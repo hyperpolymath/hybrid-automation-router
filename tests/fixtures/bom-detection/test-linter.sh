@@ -32,15 +32,27 @@ echo ""
 
 # Combined results
 echo "=== Combined results (unique files) ==="
+RESULTS_FILE="$(mktemp)"
+EXPECTED_FILE="$(mktemp)"
+trap 'rm -f "$RESULTS_FILE" "$EXPECTED_FILE"' EXIT
+
+pcre_status=0
+grep -aPl "$PATTERNS" *.rs *.yml > "$RESULTS_FILE" 2>/dev/null || pcre_status=$?
+if [ "$pcre_status" -ne 0 ] && [ "$pcre_status" -ne 1 ]; then
+    echo "PCRE scan failed with exit status $pcre_status" >&2
+    exit "$pcre_status"
+fi
+
 {
-    grep -aPl "$PATTERNS" *.rs *.yml 2>/dev/null || true
     for file in *.rs *.yml; do
         [ ! -f "$file" ] && continue
         if head -c 3 "$file" | od -An -tx1 2>/dev/null | grep -q "ef bb bf"; then
             echo "$file"
         fi
     done
-} | sort -u
+} >> "$RESULTS_FILE"
+sort -u -o "$RESULTS_FILE" "$RESULTS_FILE"
+cat "$RESULTS_FILE"
 echo ""
 
 # Expected vs actual
@@ -54,3 +66,9 @@ echo "  - clean.rs"
 echo "  - normal-whitespace.rs"
 echo "  - README.adoc"
 echo "  - test-linter.sh"
+
+printf '%s\n' corrupted-workflow.yml leading-bom.rs > "$EXPECTED_FILE"
+if ! diff -u "$EXPECTED_FILE" "$RESULTS_FILE"; then
+    echo "Combined scanner results did not match the exact fixture expectation" >&2
+    exit 1
+fi
