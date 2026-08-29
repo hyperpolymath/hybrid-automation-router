@@ -1,0 +1,126 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+// Owner: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+
+= BOM Detection Fix Verification
+
+This document describes the changes made to resolve issue hyperpolymath/empty-linter#70 in the hybrid-automation-router repository.
+
+== Changes Made
+
+=== 1. Updated .github/workflows/dogfood-gate.yml
+
+Added a separate byte-wise leading-BOM check to the "Scan for invisible characters" step:
+
+[source,bash]
+----
+# Separate byte-wise leading-BOM check (grep strips leading BOM before matching).
+# Mid-file BOMs are caught by the pattern above; leading BOMs need this byte check.
+find "$GITHUB_WORKSPACE" \
+  -not -path '*/.git/*' -not -path '*/node_modules/*' \
+  -not -path '*/.deno/*' -not -path '*/target/*' \
+  -not -path '*/_build/*' -not -path '*/deps/*' \
+  -not -path '*/external_corpora/*' -not -path '*/.lake/*' \
+  -type f \( -name '*.rs' -o -name '*.ex' -o -name '*.exs' -o -name '*.res' \
+    -o -name '*.js' -o -name '*.ts' -o -name '*.json' -o -name '*.toml' \
+    -o -name '*.yml' -o -name '*.yaml' -o -name '*.md' -o -name '*.adoc' \
+    -o -name '*.idr' -o -name '*.zig' -o -name '*.v' -o -name '*.jl' \
+    -o -name '*.gleam' -o -name '*.hs' -o -name '*.ml' -o -name '*.sh' \) \
+  -exec sh -c 'head -c 3 "$1" | od -An -tx1 | grep -q "ef bb bf" && echo "$1"' _ {} \; \
+  >> /tmp/empty-lint-results.txt 2>/dev/null
+----
+
+**Key technical detail:** `grep` strips a leading UTF-8 BOM (bytes EF BB BF) before pattern matching, so the existing PCRE pattern `\x{feff}` can only detect mid-file BOMs. Leading BOMs require a separate byte-level check using `head -c 3 | od -An -tx1`.
+
+Also updated the results handling to:
+- Use `sort -u` to deduplicate results (since files may be caught by both checks)
+- Pipe to the while loop instead of using input redirection
+
+=== 2. Created Test Fixtures
+
+Created `tests/fixtures/bom-detection/` with four test cases:
+
+[cols="2,3,3"]
+|===
+| File | Content | Expected Result
+
+| `clean.rs`
+| Normal Rust file with no invisible characters
+| Should NOT be flagged
+
+| `normal-whitespace.rs`
+| Rust file with tabs, CR, LF (legitimate whitespace)
+| Should NOT be flagged
+
+| `leading-bom.rs`
+| Rust file with UTF-8 BOM (EF BB BF) at start
+| Should be flagged by byte-wise check
+
+| `corrupted-workflow.yml`
+| YAML with C0 control character (backspace 0x08)
+| Should be flagged by pattern check
+|===
+
+=== 3. Created Documentation
+
+- `README.adoc` — Documents the test fixtures and expected behavior
+- `test-linter.sh` — Executable test script to verify the linter works
+- `VERIFICATION.adoc` (this file) — Summary of changes made
+
+== Technical Details
+
+=== Why the Separate Check is Required
+
+From issue hyperpolymath/empty-linter#70:
+
+1. **grep strips leading BOM:** The `grep` command (with or without `-P`) strips a leading UTF-8 BOM before applying the pattern. This is by design to handle BOM-prefixed UTF-8 files transparently.
+
+2. **Mid-file BOMs work:** The pattern `\x{feff}` correctly detects BOMs that appear anywhere except at the start of a file.
+
+3. **Byte-wise check:** The separate check uses `head -c 3` to extract the first three bytes, `od -An -tx1` to display them as hex, and `grep -q "ef bb bf"` to detect the BOM signature.
+
+=== Pattern Already Fixed
+
+The main PCRE pattern in dogfood-gate.yml was already updated in commits c640e72 and 478e352 to:
+- Use codepoint escapes (`\x{a0}`) instead of UTF-8 byte sequences (`\xc2\xa0`)
+- Include C0 control characters (`\x00-\x08\x0B\x0C\x0E-\x1F`)
+- Use `grep -a` to process NUL-containing files
+- Use `(*UTF)` PCRE verb for locale-independent matching
+
+This fix adds the missing leading-BOM detection.
+
+== Verification
+
+Run the test script:
+
+[source,bash]
+----
+cd tests/fixtures/bom-detection
+./test-linter.sh
+----
+
+Expected output should show:
+- `leading-bom.rs` detected by both pattern and byte-wise checks
+- `corrupted-workflow.yml` detected by pattern check
+- Clean files not flagged
+
+== Files Modified
+
+=== Modified
+- `.github/workflows/dogfood-gate.yml` — Added byte-wise leading-BOM check
+
+=== Created
+- `tests/fixtures/bom-detection/clean.rs`
+- `tests/fixtures/bom-detection/normal-whitespace.rs`
+- `tests/fixtures/bom-detection/leading-bom.rs`
+- `tests/fixtures/bom-detection/corrupted-workflow.yml`
+- `tests/fixtures/bom-detection/README.adoc`
+- `tests/fixtures/bom-detection/test-linter.sh`
+- `tests/fixtures/bom-detection/VERIFICATION.adoc`
+
+== References
+
+- Issue: hyperpolymath/empty-linter#70
+- Commit c640e72: Initial pattern fix (codepoint escapes)
+- Commit 478e352: Locale-independent PCRE
+- PR #136: The invisible-character gate never matched anything
