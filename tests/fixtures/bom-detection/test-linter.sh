@@ -17,7 +17,7 @@ echo ""
 PATTERNS='(*UTF)[\x00-\x08\x0B\x0C\x0E-\x1F\x{a0}\x{ad}\x{200b}-\x{200f}\x{202a}-\x{202f}\x{2060}\x{2066}-\x{2069}\x{feff}]'
 
 echo "=== Pattern-based check (mid-file BOMs, C0 controls, invisible Unicode) ==="
-grep -aPl "$PATTERNS" *.rs *.yml 2>/dev/null | sort || true
+grep -aPl "$PATTERNS" -- *.rs *.yml 2>/dev/null | sort || true
 echo ""
 
 # Byte-wise leading-BOM check
@@ -37,7 +37,7 @@ EXPECTED_FILE="$(mktemp)"
 trap 'rm -f "$RESULTS_FILE" "$EXPECTED_FILE"' EXIT
 
 pcre_status=0
-grep -aPl "$PATTERNS" *.rs *.yml > "$RESULTS_FILE" 2>/dev/null || pcre_status=$?
+grep -aPl "$PATTERNS" -- *.rs *.yml > "$RESULTS_FILE" 2>/dev/null || pcre_status=$?
 if [ "$pcre_status" -ne 0 ] && [ "$pcre_status" -ne 1 ]; then
     echo "PCRE scan failed with exit status $pcre_status" >&2
     exit "$pcre_status"
