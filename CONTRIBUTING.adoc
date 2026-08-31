@@ -1,0 +1,9 @@
+== Contributing
+
+[arabic]
+. Fork the repository
+. Create a feature branch
+. Ensure SPDX headers on all files
+. Submit a pull request
+
+*Author:* Jonathan D.A. Jewell j.d.a.jewell@open.ac.uk
