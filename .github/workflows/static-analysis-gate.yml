@@ -167,16 +167,26 @@ jobs:
         continue-on-error: true
         run: |
           git clone https://github.com/hyperpolymath/hypatia.git "$HOME/hypatia" 2>/dev/null || true
-          if [ -d "$HOME/hypatia/scanner" ]; then
+          # Probe the file hypatia actually has. The previous test was
+          # `[ -d "$HOME/hypatia/scanner" ]`, but hypatia has NO `scanner/`
+          # directory, so the test was UNSATISFIABLE: ready was always false,
+          # "Run Hypatia scan" was always skipped, and the stub step below wrote
+          # a clean `[]`. That made this gate unconditionally green regardless
+          # of the code under test. `mix.exs` is hypatia's real project root file.
+          #
+          # The old branch also did `mv hypatia ../hypatia-v2`, moving the built
+          # escript OUT of $HOME/hypatia while the scan step still invokes
+          # $HOME/hypatia/hypatia-cli.sh -- which looks for the escript inside
+          # its own directory and would therefore rebuild on every run. Dropped.
+          if [ -f "$HOME/hypatia/mix.exs" ]; then
             cd "$HOME/hypatia"
-            if [ ! -f hypatia-v2 ]; then
+            if [ ! -f hypatia ] && [ ! -f hypatia-v2 ]; then
               mix deps.get
               mix escript.build
-              mv hypatia ../hypatia-v2
             fi
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
-            echo "::notice::Hypatia scanner not available — skipping scan"
+            echo "::error::Hypatia scanner could not be prepared -- the scan is SKIPPED and this gate enforces NOTHING on this run"
             echo "ready=false" >> "$GITHUB_OUTPUT"
           fi
 
