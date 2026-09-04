@@ -132,42 +132,109 @@ jobs:
           # Inline invisible character detection (from empty-linter's core patterns).
           # Checks for: zero-width spaces, zero-width joiners, BOM, soft hyphens,
           # non-breaking spaces, null bytes, and other invisible Unicode in source files.
-          set +e
-          PATTERNS='\xc2\xa0|\xe2\x80\x8b|\xe2\x80\x8c|\xe2\x80\x8d|\xef\xbb\xbf|\xc2\xad|\xe2\x80\x8e|\xe2\x80\x8f|\xe2\x80\xaa|\xe2\x80\xab|\xe2\x80\xac|\xe2\x80\xad|\xe2\x80\xae|\x00'
-          find "$GITHUB_WORKSPACE" \
-            -not -path '*/.git/*' -not -path '*/node_modules/*' \
-            -not -path '*/.deno/*' -not -path '*/target/*' \
-            -not -path '*/_build/*' -not -path '*/deps/*' \
-            -not -path '*/external_corpora/*' -not -path '*/.lake/*' \
-            -type f \( -name '*.rs' -o -name '*.ex' -o -name '*.exs' -o -name '*.res' \
-              -o -name '*.js' -o -name '*.ts' -o -name '*.json' -o -name '*.toml' \
-              -o -name '*.yml' -o -name '*.yaml' -o -name '*.md' -o -name '*.adoc' \
-              -o -name '*.idr' -o -name '*.zig' -o -name '*.v' -o -name '*.jl' \
-              -o -name '*.gleam' -o -name '*.hs' -o -name '*.ml' -o -name '*.sh' \) \
-            -exec grep -Prl "$PATTERNS" {} \; > /tmp/empty-lint-results.txt 2>/dev/null
-          EL_EXIT=$?
-          set -e
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
 
-          FINDINGS=$(wc -l < /tmp/empty-lint-results.txt 2>/dev/null || echo 0)
-          echo "findings=$FINDINGS" >> "$GITHUB_OUTPUT"
-          echo "exit_code=$EL_EXIT" >> "$GITHUB_OUTPUT"
-          echo "ready=true" >> "$GITHUB_OUTPUT"
+          root = Path(os.environ["GITHUB_WORKSPACE"])
+          skipped_dirs = {
+              ".cache", ".deno", ".elixir_ls", ".git", ".lake", ".zig-cache",
+              "_build", "build", "coverage", "deps", "dist", "external_corpora",
+              "node_modules", "out", "target", "vendor", "zig-cache", "zig-out",
+          }
+          intentional_fixture_dirs = {
+              ("tests", "fixtures", "bom-detection"),
+              ("tests", "fixtures", "empty-linter"),
+          }
+          source_suffixes = {
+              ".adoc", ".adb", ".ads", ".agda", ".c", ".cc", ".clj", ".cljs",
+              ".cpp", ".erl", ".ex", ".exs", ".fs", ".fsi", ".fsx", ".gleam",
+              ".h", ".hh", ".hpp", ".hrl", ".hs", ".idr", ".java", ".jl",
+              ".js", ".json", ".kt", ".kts", ".lean", ".lua", ".md", ".ml",
+              ".php", ".r", ".rb", ".res", ".rs", ".scala", ".sh", ".swift",
+              ".toml", ".ts", ".v", ".yaml", ".yml", ".zig",
+          }
+          invisible_codepoints = {
+              0x00A0, 0x00AD, 0x2060, 0xFEFF,
+              *range(0x200B, 0x2010),
+              *range(0x202A, 0x2030),
+              *range(0x2066, 0x206A),
+          }
 
-          # Emit annotations for each file with invisible chars
-          while IFS= read -r filepath; do
-            [ -z "$filepath" ] && continue
-            REL_PATH="${filepath#$GITHUB_WORKSPACE/}"
-            echo "::warning file=${REL_PATH}::Invisible Unicode characters detected (zero-width space, BOM, NBSP, etc.)"
-          done < /tmp/empty-lint-results.txt
+          def command_escape(value):
+              return str(value).replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+
+          def property_escape(value):
+              return command_escape(value).replace(":", "%3A").replace(",", "%2C")
+
+          # Runtime regression for GitHub workflow-command property delimiters.
+          assert property_escape("docs/a,b::c.md") == "docs/a%2Cb%3A%3Ac.md"
+
+          def intentionally_invalid_fixture(relative):
+              return any(relative.parts[:len(prefix)] == prefix for prefix in intentional_fixture_dirs)
+
+          findings = []
+          errors = []
+          for directory, dirnames, filenames in os.walk(root, topdown=True):
+              dirnames[:] = [name for name in dirnames if name not in skipped_dirs]
+              directory_path = Path(directory)
+              for filename in filenames:
+                  path = directory_path / filename
+                  relative = path.relative_to(root)
+                  if (
+                      path.is_symlink()
+                      or path.suffix.lower() not in source_suffixes
+                      or intentionally_invalid_fixture(relative)
+                  ):
+                      continue
+                  try:
+                      data = path.read_bytes()
+                  except OSError as error:
+                      errors.append((relative, f"could not read file: {error}"))
+                      continue
+
+                  reasons = set()
+                  if data.startswith(b"\xef\xbb\xbf"):
+                      reasons.add("leading UTF-8 BOM")
+                  if any(byte <= 0x08 or byte in (0x0B, 0x0C) or 0x0E <= byte <= 0x1F for byte in data):
+                      reasons.add("C0 control character")
+                  try:
+                      text_content = data.decode("utf-8", errors="strict")
+                  except UnicodeDecodeError as error:
+                      errors.append((relative, f"invalid UTF-8 at byte {error.start}"))
+                      continue
+                  if any(ord(character) in invisible_codepoints for character in text_content):
+                      reasons.add("invisible Unicode code point")
+                  if reasons:
+                      findings.append((relative, ", ".join(sorted(reasons))))
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"findings={len(findings)}\n")
+              output.write(f"exit_code={2 if errors else 0}\n")
+              output.write("ready=true\n")
+
+          for relative, reasons in findings:
+              print(f"::warning file={property_escape(relative)}::Invisible characters detected: {command_escape(reasons)}")
+          for relative, reason in errors:
+              print(f"::error file={property_escape(relative)}::Invisible-character scan failed: {command_escape(reason)}")
+          PY
 
       - name: Write summary
         run: |
           if [ "${{ steps.lint.outputs.ready }}" = "true" ]; then
             FINDINGS="${{ steps.lint.outputs.findings }}"
+            EXIT_CODE="${{ steps.lint.outputs.exit_code }}"
+            if [ "$EXIT_CODE" -ne 0 ] 2>/dev/null; then
+              echo "## Empty-Linter Results" >> "$GITHUB_STEP_SUMMARY"
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+              echo ":x: Scanner execution failed; see error annotations above." >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
             if [ "$FINDINGS" -gt 0 ] 2>/dev/null; then
               echo "## Empty-Linter Results" >> "$GITHUB_STEP_SUMMARY"
               echo "" >> "$GITHUB_STEP_SUMMARY"
               echo "Found **${FINDINGS}** invisible character issue(s). See annotations above." >> "$GITHUB_STEP_SUMMARY"
+              exit 1
             else
               echo "## Empty-Linter Results" >> "$GITHUB_STEP_SUMMARY"
               echo "" >> "$GITHUB_STEP_SUMMARY"

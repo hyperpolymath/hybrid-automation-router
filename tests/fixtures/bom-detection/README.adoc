@@ -1,0 +1,58 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+// Owner: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+
+= BOM Detection Test Fixtures
+
+Test fixtures for verifying the invisible character and BOM detection linter in `dogfood-gate.yml`.
+
+== Test Cases
+
+=== Clean Files (Should Not Be Flagged)
+
+* `clean.rs` — No BOM, no invisible characters
+* `normal-whitespace.rs` — Normal whitespace (tabs, CR, LF) that should not trigger detection
+
+=== Files That Should Be Flagged
+
+* `leading-bom.rs` — UTF-8 BOM (EF BB BF) at start of file
+  - **Critical:** grep strips leading BOM before matching, so the pattern-based check alone cannot detect it
+  - Requires separate byte-wise check: `head -c 3 "$file" | od -An -tx1 | grep -q "ef bb bf"`
+
+* `corrupted-workflow.yml` — Contains C0 control character (backspace 0x08)
+  - YAML parsers reject control characters, making such files unparseable
+  - The C0 range `\x01-\x08,\x0B,\x0C,\x0E-\x1F` is now included in the pattern
+  - TAB (0x09), LF (0x0A), and CR (0x0D) are excluded as legitimate whitespace
+
+== Verification
+
+Run the linter pattern manually to verify:
+
+[source,bash]
+----
+# Pattern-based check (catches mid-file BOMs and C0 controls)
+PATTERNS='(*UTF)[\x00-\x08\x0B\x0C\x0E-\x1F\x{a0}\x{ad}\x{200b}-\x{200f}\x{202a}-\x{202f}\x{2060}\x{2066}-\x{2069}\x{feff}]'
+grep -aPl "$PATTERNS" tests/fixtures/bom-detection/*.rs tests/fixtures/bom-detection/*.yml
+
+# Byte-wise leading-BOM check
+find tests/fixtures/bom-detection -type f \
+  -exec sh -c 'head -c 3 "$1" | od -An -tx1 | grep -q "ef bb bf" && echo "$1"' _ {} \;
+----
+
+== Expected Results
+
+[cols="2,1,3"]
+|===
+| File | Should Be Flagged | Reason
+
+| clean.rs | No | Clean file
+| normal-whitespace.rs | No | Only legitimate whitespace
+| leading-bom.rs | Yes | Leading UTF-8 BOM (byte-wise check)
+| corrupted-workflow.yml | Yes | C0 control character (pattern check)
+|===
+
+== References
+
+* Issue: hyperpolymath/empty-linter#70
+* Root cause: UTF-8 byte sequences vs. Unicode codepoints in PCRE patterns
+* Fix: Codepoint escapes + C0 range + `grep -a` + separate leading-BOM check
