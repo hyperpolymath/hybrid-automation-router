@@ -59,11 +59,11 @@ hybrid-automation-router/
 │   └── contractiles/    # Policy contracts (k9, dust, lust, must, trust)
 ├── .well-known/         # Protocol files (Perimeter 1-3)
 ├── .github/             # GitHub config (Perimeter 1)
+│   ├── CONTRIBUTING.md  # This file
 │   ├── ISSUE_TEMPLATE/
 │   └── workflows/
 ├── CHANGELOG.md
 ├── CONTRIBUTING.adoc    # AsciiDoc overview (points here)
-├── CONTRIBUTING.md      # This file (detailed contribution guide)
 ├── LICENSE
 ├── README.adoc
 ├── ROADMAP.adoc
