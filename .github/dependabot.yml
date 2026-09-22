@@ -15,6 +15,13 @@ updates:
           - "*"
 
   # Rust/Cargo
+    ignore:
+      # HOLD: github/codeql-action at v4.38.0 (SHA-pinned). v4.38.1 fails
+      # GitHub workflow-startup validation estate-wide (nexia-list#100;
+      # SHA-form re-bump bypassed versions-scoped ignores - nexia-list#101).
+      # Hold until upstream clears 4.38.1 or a new release verifies green.
+      - dependency-name: "github/codeql-action"
+
   - package-ecosystem: "cargo"
     directory: "/"
     schedule:
