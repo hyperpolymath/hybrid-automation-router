@@ -40,7 +40,10 @@ These are source observations, not fresh build/test results.
 
 Source links:
 https://github.com/hyperpolymath/hybrid-automation-router/blob/737f9ce2cc95adcb193d55c5b2476e5789dd33bf/crates/har-dispatch/src/lib.rs[HAR dispatch];
-https://github.com/hyperpolymath/valence-shell/blob/295c3ca1e25d277339ec1a812c49d25610ab7565/impl/rust-cli/src/commands.rs[Valence commands].
+https://github.com/hyperpolymath/valence-shell/blob/295c3ca1e25d277339ec1a812c49d25610ab7565/impl/rust-cli/src/commands.rs[Valence commands];
+https://github.com/hyperpolymath/valence-shell/blob/295c3ca1e25d277339ec1a812c49d25610ab7565/impl/rust-cli/src/state.rs[Valence operation records];
+https://github.com/hyperpolymath/valence-shell/blob/295c3ca1e25d277339ec1a812c49d25610ab7565/impl/rust-cli/src/lib.rs[Valence library exports];
+https://github.com/hyperpolymath/hybrid-automation-router/blob/737f9ce2cc95adcb193d55c5b2476e5789dd33bf/Cargo.toml[HAR workspace].
 
 == Event-chain execution order
 
@@ -105,14 +108,112 @@ closed. Use Valence only if a small reusable API can express the conditions.
 Otherwise retain a minimal executor for the experiment without adding a
 Valence dependency.
 
+== Implementation decisions for the first pilot
+
+These are design decisions, not newly established runtime guarantees.
+
+=== Isolation and resource identity
+
+Choose a Unix-only, in-process pilot with a private temporary directory,
+one regular file, maximum contents of 64 KiB, and no arbitrary path input.
+One executor mutex serializes admission, mutation and recovery. All intentional
+interference in tests occurs between operations through a controlled fixture.
+This is not protection against uncooperative processes.
+
+Keep an open handle to the original file for the ledger lifetime and compare
+its device/inode identity with the directory entry before recovery. Keeping
+the original inode open prevents inode reuse from masquerading as the same
+object in this limited experiment. Reject symlinks, non-regular files and
+files with multiple hard links. Mutate through the retained handle.
+The controlled parent directory must not be replaceable by another test actor.
+No inode value is a persistent or cross-host identity guarantee.
+
+A separate fixture generation counter records controlled intervening writes,
+including A -> B -> A changes. Matching contents alone does not establish
+uninterrupted ownership. The counter is meaningful only because every writer
+in the fixture participates; do not export that claim to general filesystems.
+
+=== Operation state and retry policy
+
+Use the following internal state transitions:
+
+* admitted -> applying -> applied
+* admitted -> rejected (no mutation)
+* applying -> apply-uncertain (any error after mutation may have begun)
+* applied -> recovering -> recovered
+* applied -> conflict (resource identity, generation or contents mismatch)
+* recovering -> recovery-uncertain
+
+Admission reserves the ID and complete request under the same mutex before
+any side effect. Record applying/recovering before issuing mutation calls.
+A rejected operation is terminal for that ID; changed preconditions require
+a new operation ID. Conflict and uncertain states are quarantined in this
+pilot: no automatic reapply or rollback. Investigation is read-only.
+
+Repeated identical requests return the retained state without another effect,
+including recovered, conflict and uncertain states. Reusing an ID with any
+different request field is rejected without altering its original record.
+Compare the complete structured request in memory; do not introduce a hash or
+serialization scheme just to deduplicate this bounded pilot.
+No ledger eviction during a session. Bound admission to 128 records; reject
+new admissions when full rather than deleting deduplication evidence.
+
+An already recovered result describes historical recovery, not a fresh claim
+that the file still has those bytes. Empty prior contents are valid evidence;
+missing prior contents are a distinct error.
+
+Lost acknowledgement after a recorded applied result is different from an
+ambiguous mutation. The former permits retrieval of that result. The latter
+remains uncertain, even if bytes happen to equal the desired value; a content
+observation alone does not establish provenance or absence of other effects.
+
+=== HAR adapter boundary
+
+Do not change production dispatcher retry semantics in this pilot.
+Use a dedicated test dispatcher with max_attempts = 1 initially.
+The executor ledger is the authoritative operation outcome; HAR's existing
+DeliveryReceipt remains a transport receipt, never a recovery certificate.
+
+For the later retry test, deliberately lose the acknowledgement after recording
+applied, return a transport error, and enable two attempts. The adapter must
+consult the same ledger on the second attempt and return the retained result.
+Inject a partial-write error in a separate case: repeated dispatch must leave
+apply-uncertain quarantined and perform no further write. An error or DLQ entry
+does not imply no effect. Assert both operation state and mutation count.
+
+No cross-process or cross-restart exactly-once claim is made. A new executor
+session gets a new identity and rejects old-session requests. Cancellation or
+panic is not modelled as safe recovery: retain in-progress as uncertain if it
+can be observed, otherwise state is unavailable. Crash recovery needs durability.
+
+=== Valence decision and work split
+
+Use a minimal experimental executor first. Valence's unguarded undo path
+cannot satisfy this contract merely by wrapping it with a pre-check.
+Keep the contract reusable; reassess Valence after the acceptance suite exists.
+No Valence API change is authorized by this plan alone.
+
+The next mechanical tranche is environment/toolchain setup, documentation
+checks and review follow-through. Then implement direct-executor tests followed
+by HAR-dispatch tests in a separate PR. Escalate architectural review again if
+durable storage, hostile writers, cross-process ownership or automatic
+reconciliation is introduced. No new proofs are needed to claim this pilot
+as tested experimental behaviour.
+
 == Acceptance cases
 
 [cols="1,3"]
 |===
 |Event |Required observation
+|Ordinary successful apply |Replacement bytes remain; applied result recorded; no automatic recovery
+|Partial write followed by I/O error |Uncertain result retained; repeated delivery cannot mutate again
+|Partial recovery followed by I/O error |Recovery-uncertain retained; neither applied nor recovered asserted
 |Apply then downstream failure |Original bytes restored; recovery recorded
 |Pre-state mismatch |No mutation; rejected-before-effect
 |Different bytes written between apply and recovery |Conflict; other bytes preserved
+|Controlled write changes bytes and restores them |Generation conflict; no recovery mutation
+|Concurrent identical requests |One effect, shared retained result
+|Ledger capacity exhausted |New admission refused before mutation; existing outcomes retained
 |Resource replaced at the same path |Conflict even if replacement contents match
 |Missing or invalid recovery evidence |Refusal; never restore default empty bytes
 |Repeated identical logical request |No second effect within the experiment's retained ledger lifetime
@@ -130,7 +231,12 @@ contract. Isolate retry behaviour explicitly during initial effect tests.
 == Proof and representation policy
 
 New proof work follows the owner's Agda-first direction:
-agda --safe --without-k --cubical-compatible.
+`agda --safe --without-K --cubical-compatible <module.agda>`
+
+The uppercase K is required. Cubical compatibility requires Agda 2.6.3 or
+later and already implies without-K; retain the explicit flag for readability.
+See https://agda.readthedocs.io/en/v2.6.4.3/tools/command-line-options.html[Agda options].
+
 Coq/Lean witness checking needs an explicit checked translation/interface;
 do not claim automatic cross-prover agreement. Existing Idris2/Lean work remains
 evidence with its original assumptions; do not rewrite it merely for this pilot.
