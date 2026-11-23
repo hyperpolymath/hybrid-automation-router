@@ -16,12 +16,12 @@ webhooks, queues, schedules) and routes them to the best automation
 target based on capabilities, tags, priorities, and configurable
 strategies.
 
-The v0.2.0 workspace is a Rust workspace of *7 crates* covering core
-routing, configuration management, event dispatch with retry and
-dead-letter handling, health checking with degradation tracking, and
-metrics collection with snapshots. The routing engine compiles and its
-tests pass; production deployment against live targets is not yet
-validated (Phase 1 is near complete).
+The v0.2.0 Rust workspace contains *10 crates*, including the routing
+and dispatch core, the automation meta-model (`+har-meta+`), installation
+domain (`+har-install+`) and shared queue ABI (`+har-abi+`). Unit and
+property tests exist; the current CI baseline is not green, and end-to-end
+production execution against real targets has not been validated. See
+link:docs/plans/HAR-ULTRAPLAN-2026-11-23.adoc[HAR ultraplan and evidence baseline].
 
 HAR is designed for *tight integration* with
 https://github.com/hyperpolymath/rpa-elysium[RPA Elysium] while
@@ -30,7 +30,8 @@ remaining fully independent — either can be used standalone.
 ____
 *Direction (Phase 2).* HAR is being extended into a
 declarative/imperative *automation interlingua* — a tool-neutral
-substrate (carried on A2ML) that lets heterogeneous automation estates
+substrate (historically specified over A2ML, pending DEED-format
+reconciliation) that lets heterogeneous automation estates
 (Puppet, Salt, Terraform, Ansible) hand off and resume across each
 other, with HAR as the seam. See
 link:docs/decisions/0002-automation-interlingua-declarative-imperative.adoc[`+docs/decisions/0002-automation-interlingua-declarative-imperative.adoc+`].
@@ -63,9 +64,11 @@ ____
                     └─────────────────┘ └──────────────────┘
 ....
 
-The Rust routing/dispatch core is implemented and tested. The *shared
-ABI* band (proven-fsm / proven-queueconn) and the Gleam backend are
-*design scaffold* — see _Status_ below.
+Routing and dispatch *library primitives* are implemented. An optional
+NATS transport publishes shared-ABI envelopes; an independent real target
+consumer and its resulting effects have not been verified end-to-end.
+The Idris2/Zig integration and Gleam backend remain incomplete — see
+_Status_ below.
 
 == RPA Elysium Integration
 
@@ -73,34 +76,37 @@ HAR and RPA Elysium are designed to share:
 
 * *proven-fsm types* — the same state-machine vocabulary for workflow
 transitions _(planned: ABI defined, not yet wired into the Rust core)_.
-* *proven-queueconn* — HAR publishes tasks, rpa-elysium subscribes
-_(planned: the queueconn runtime is not yet implemented)_.
-* *Common event schema* — Idris2 ABI definitions in `+src/abi/+`
-_(scaffold — type stubs; see Status)_.
+* *proven-queueconn* — an optional NATS publisher exists in HAR; the
+RPA Elysium consumer, durable outcome semantics and integration test remain
+unverified.
+* *Common event schema* — Rust wire codec in `+har-abi+` and normative
+Idris2 definitions in `+src/abi/+`. Historical proof claims are recorded
+in `+PROOF-NEEDS.adoc+`; cross-runtime conformance is not yet demonstrated.
 
-=== Using Both Together
+=== Routing demonstration (dry-run only)
 
 [source,bash]
 ----
-# Start rpa-elysium in the background (subscribes to queue)
-rpa-fs run workflow.json &
-
-# Route events through HAR
+# Show which target would be chosen; this does NOT dispatch the event
 har route filesystem --target rpa-elysium
 ----
+
+The fully integrated HAR -> queue -> RPA Elysium execution example remains
+a milestone, not a supported quick-start workflow.
 
 == Technology Stack
 
 [width="100%",cols="34%,33%,33%",options="header",]
 |===
 |Layer |Technology |State
-|*Core engine* |Rust — 8 crates (har-core, har-config, har-dispatch,
-har-health, har-metrics, har-router, har-cli, har-abi) |✅ implemented +
-tested
+|*Core and domains* |Rust — 10 crates: har-core, har-config, har-dispatch,
+har-health, har-metrics, har-router, har-cli, har-abi, har-meta,
+har-install |Libraries implemented to different depths; CI not yet green
 
-|*ABI* |Idris2 (`+src/abi/*.idr+`) — router lifecycle + queue types;
-shared queue ABI bound in Rust via `+har-abi+` |⚠ Idris2 stubs not yet
-compiled/proven; `+har-abi+` implemented + tested
+|*ABI* |Idris2 (`+src/abi/*.idr+`) — normative lifecycle/invariants;
+Rust shared queue ABI in `+har-abi+` |Historical checked proof
+obligations recorded; current Idris2 build and runtime correspondence
+not re-verified
 
 |*Linear types* |Ephapax (`+src/abi/LinearRouting.eph+`) — exactly-once
 delivery |⚠ spec only
@@ -113,7 +119,8 @@ started)
 
 |*Config* |Nickel (typed configuration) |partial
 
-|*Build* |Guix (`+guix.scm+`, reproducible) |✅
+|*Build* |Cargo workspace + Justfile; Guix channel metadata present
+|Cargo workflow exists; reproducible Guix packaging not verified
 |===
 
 == Quick Start
@@ -129,7 +136,7 @@ cargo test --workspace
 # Show registered targets
 har targets
 
-# Route a filesystem event
+# Dry-run routing only (prints decision; does not send to target)
 har route filesystem
 
 # Route with a target hint
@@ -141,6 +148,12 @@ har route web --target web-auto
 [width="100%",cols="50%,50%",options="header",]
 |===
 |Crate |Purpose
+|`+har-abi+` |Shared queue tags, envelope and receipt codec
+
+|`+har-meta+` |Declarative resources, dependency graph, ownership and interchange
+
+|`+har-install+` |Experimental manager-less install capture and replay
+
 |`+har-core+` |Core types: events, targets, routes, strategies
 
 |`+har-config+` |Configuration loading and validation (JSON, file-based)
@@ -186,17 +199,19 @@ from the event id)
 
 == Status
 
-* *Phase 0 (foundation):* ✅ complete.
-* *Phase 1 (core framework):* ⚙ near complete — the 7 Rust crates are
-implemented and tested; remaining: proven-queueconn runtime + Gleam
-backend.
-* *Phase 2 (automation interlingua):* ◆ the current north star (see
-_Direction_ above and `+ROADMAP.adoc+`).
-* *Scaffold, not yet real:* the Idris2 ABI (`+src/abi/+`) and Ephapax
-linear types are design stubs — they do not yet compile as a package or
-wire into the Rust runtime; `+panels/+` and a Gleam `+services/+`
-backend referenced in earlier drafts do not exist yet. Proof obligations
-are tracked in `+PROOF-NEEDS.md+`.
+* *Phase 0 (foundation):* Repository scaffold established; green CI
+baseline is blocked by current workflow failures.
+* *Phase 1 (core framework):* Routing, dispatch, health and metrics
+libraries exist; no production end-to-end target integration is verified.
+* *Phase 2A (declarative/imperative core):* Resource graph and metadata
+codec started, but complete lowering/apply/observe/lifting is pending.
+* *Phase 2B (external tool federation):* Planned, not demonstrated.
+* *Phase 2C (install domain):* Tier-1 hermetic simulated-executor test
+landed; no arbitrary real installer capture claim.
+* *Formal/FFI:* Idris2 proof history exists with conditional premises;
+Ephapax is a specification, Zig FFI remains unwired. `+panels/+` and
+the Gleam `+services/+` backend remain absent.
+See `+PROOF-NEEDS.adoc+` for proof claims and their limits.
 
 See link:ROADMAP.adoc[`+ROADMAP.adoc+`] for the full phased plan.
 

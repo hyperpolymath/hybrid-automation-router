@@ -28,12 +28,21 @@ toc::[]
 
 |*Phase 2*
 |Automation Interlingua (declarative/imperative + cross-tool handoff)
-|◆ *PLANNED — new north star*
+|⚙ *2A/2C begun; 2B planned*
 |===
 
 NOTE: Phase 2 was reprioritised (see link:docs/decisions/0002-automation-interlingua-declarative-imperative.adoc[ADR-0002]). The former "Advanced Routing" phase is now Phase 3, and subsequent phases renumber accordingly.
 
-The repository contains a Rust workspace with 8 crates (`har-core`, `har-config`, `har-dispatch`, `har-health`, `har-metrics`, `har-router`, `har-cli`, `har-abi`) plus ABI/FFI *scaffold* (Idris2 + Zig — type stubs, not yet compiled or wired) and an Ephapax linear-types spec. A Gleam backend service and PanLL monitoring panels are planned but not yet present.
+At the inspected 2026-11-10 main HEAD the workspace contains *ten*
+Rust crates: `har-core`, `har-config`, `har-dispatch`, `har-health`,
+`har-metrics`, `har-router`, `har-cli`, `har-abi`, `har-meta` and
+`har-install`. Idris2 proof history exists (see `PROOF-NEEDS.adoc`);
+Zig FFI and the Ephapax runtime are not wired to the execution core.
+The Gleam backend and PanLL panels do not exist in this tree.
+Historical completion statuses below are design/implementation claims,
+*not* evidence of a passing 2026-11 CI baseline.
+See link:docs/plans/HAR-ULTRAPLAN-2026-11-23.adoc[2026-11-23 evidence baseline
+and gated ultraplan].
 
 ---
 
@@ -115,8 +124,9 @@ Build the routing engine in Rust that dispatches automation events from sources 
 |✓ Done
 
 |Guix packaging
-|guix.scm for reproducible builds
-|✓ Done
+|Guix channel metadata exists; standalone guix.scm and reproducible
+package build have not been verified
+|⚠ Verification pending
 |===
 
 ==== 1.2 ABI/FFI Scaffold ✓
@@ -211,7 +221,9 @@ Build the routing engine in Rust that dispatches automation events from sources 
 
 == Phase 2: Automation Interlingua
 
-*Status*: Planned (new north star — see link:docs/decisions/0002-automation-interlingua-declarative-imperative.adoc[ADR-0002])
+*Status*: In progress — 2A meta-model and codec skeleton plus 2C tier-1
+hermetic implementation landed; 2B cross-tool handoff remains planned.
+ADR-0002 is still marked proposed pending ratification.
 
 === Objective
 
@@ -220,7 +232,10 @@ desired routing state) and *imperative* control (the ordered dispatch it
 already runs), then generalise that duality into a tool-neutral **interlingua**
 that lets heterogeneous automation estates (Puppet, Salt, Terraform, Ansible)
 hand off and resume across each other — joining up fragments rather than
-replacing them. The interchange substrate is **A2ML**.
+replacing them. The original interchange substrate is **A2ML**, now legacy in the wider
+estate. A canonical DEED carrier must be assessed against the authoritative
+DEED ANBF before any new format is standardised; existing A2ML dialects
+require an explicit compatibility/migration policy.
 
 === Framing
 
