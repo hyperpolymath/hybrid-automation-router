@@ -462,13 +462,20 @@ impl Dispatcher {
         event: &AutomationEvent,
     ) -> Result<DeliveryReceipt> {
         let target_id = decision.target_id.clone();
-        let adapter = self
-            .adapters
-            .get(&target_id)
-            .ok_or_else(|| Error::TargetUnavailable {
-                target: target_id.clone(),
-                reason: "No adapter registered".into(),
-            })?;
+        // An unregistered adapter is a delivery failure, not a silent
+        // pre-dispatch drop. Record it with zero attempts, since no transport
+        // invocation was made.
+        let adapter = match self.adapters.get(&target_id) {
+            Some(adapter) => adapter,
+            None => {
+                let reason = format!("No adapter registered for target '{target_id}'");
+                self.dead_letter(event, &target_id, &reason, 0).await?;
+                return Err(Error::TargetUnavailable {
+                    target: target_id,
+                    reason,
+                });
+            }
+        };
 
         // Circuit breaker: if open, dead-letter immediately (shed load without
         // dropping — the event is still recorded, preserving no-silent-drops).
@@ -778,6 +785,13 @@ mod tests {
 
         let result = dispatcher.dispatch(&decision, &event).await;
         assert!(result.is_err());
+        let dead = dispatcher.dead_letters().await;
+        assert_eq!(dead.len(), 1, "missing adapter must be dead-lettered");
+        assert_eq!(dead[0].event_id, event.id);
+        assert_eq!(dead[0].target_id, decision.target_id);
+        assert_eq!(dead[0].attempts, 0, "no transport attempt occurred");
+        assert!(dead[0].reason.contains("No adapter registered"));
+        assert!(dispatcher.receipts().await.is_empty());
     }
 
     #[tokio::test]
