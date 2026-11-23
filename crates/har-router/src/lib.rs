@@ -24,9 +24,9 @@ pub struct Router {
     /// Rotation counter for the round-robin strategy. Interior mutability lets
     /// `route(&self)` advance it without requiring a `&mut` receiver.
     rr_counter: AtomicUsize,
-    /// Pluggable policy gate applied to capability-matched candidates. Defaults
-    /// to [`AllowAll`] (veto nothing), so capability-aware routing reduces to
-    /// the structural intersection unless a stricter policy is installed.
+    /// Pluggable policy gate applied to every route candidate, including
+    /// explicit target hints and tag rules. Defaults to [`AllowAll`] (veto
+    /// nothing), so deployments must install their own authority policy.
     verifier: Box<dyn CapabilityVerifier>,
 }
 
@@ -58,9 +58,9 @@ impl Router {
         self
     }
 
-    /// Install a capability-verification policy. Applied to the capability-
-    /// matched candidate set, after the structural intersection and before
-    /// strategy selection. The default is [`AllowAll`].
+    /// Install a capability-verification policy. Applied after the required-
+    /// capability intersection on all selection paths (including hints and
+    /// tag rules), before choosing a target. The default is [`AllowAll`].
     pub fn with_verifier(mut self, verifier: Box<dyn CapabilityVerifier>) -> Self {
         self.verifier = verifier;
         self
@@ -74,19 +74,47 @@ impl Router {
         }
     }
 
-    /// Route an event to the best matching target
+    /// Route an event to a permitted, available target.
+    ///
+    /// Every path uses the same required-capability intersection and policy
+    /// verifier. A caller-supplied target hint selects directly only when it
+    /// passes that gate; a denied hint fails closed rather than silently
+    /// dispatching to an alternative target.
     pub fn route(&self, event: &AutomationEvent) -> Result<RouteDecision> {
         debug!("Routing event {} (category: {})", event.id, event.category);
 
-        // 1. Check for direct target hint
+        // Build the authorised candidate set once. A tag rule or direct hint
+        // may intentionally override category matching, but NEVER capability
+        // requirements or the independent caller/target policy verifier.
+        let eligible: Vec<&AutomationTarget> = self
+            .context
+            .targets
+            .iter()
+            .filter(|t| {
+                t.is_available()
+                    && t.satisfies(&event.required_capabilities)
+                    && self.verifier.verify(event, t)
+            })
+            .collect();
+
+        // 1. A direct hint overrides category/rules, not authorisation.
         if let Some(ref hint) = event.target_hint {
+            if eligible.iter().any(|t| t.id == *hint) {
+                return Ok(RouteDecision::direct(&event.id, hint));
+            }
+            // If a registered, available target was explicitly requested,
+            // capability/policy denial must not degrade to a different target.
             if self
                 .context
                 .targets
                 .iter()
                 .any(|t| t.id == *hint && t.is_available())
             {
-                return Ok(RouteDecision::direct(&event.id, hint));
+                return Err(Error::NoTarget(format!(
+                    "Target hint '{}' rejected by capability requirements or policy ({})",
+                    hint,
+                    self.verifier.name()
+                )));
             }
             warn!(
                 "Target hint '{}' not available, falling back to routing",
@@ -94,16 +122,12 @@ impl Router {
             );
         }
 
-        // 2. Check tag-based rules
+        // 2. Tag rules may override the event category, but can only select
+        // from the authorised candidate set.
         for tag in &event.tags {
             if let Some(target_ids) = self.context.tag_rules.get(tag) {
                 for target_id in target_ids {
-                    if self
-                        .context
-                        .targets
-                        .iter()
-                        .any(|t| t.id == *target_id && t.is_available())
-                    {
+                    if eligible.iter().any(|t| t.id == *target_id) {
                         return Ok(RouteDecision {
                             event_id: event.id.clone(),
                             target_id: target_id.clone(),
@@ -117,17 +141,11 @@ impl Router {
             }
         }
 
-        // 3. Capability-based matching. `find_matching_targets` already
-        //    applies the structural capability intersection (a target must
-        //    declare every `required_capabilities` entry); here we additionally
-        //    apply the pluggable policy verifier, which may veto otherwise-
-        //    eligible targets (e.g. an unauthorised caller for a privileged
-        //    capability).
-        let matches: Vec<&AutomationTarget> = self
-            .context
-            .find_matching_targets(event)
+        // 3. Standard capability/category routing uses the same gate. The
+        // only extra restriction here is the event category.
+        let matches: Vec<&AutomationTarget> = eligible
             .into_iter()
-            .filter(|t| self.verifier.verify(event, t))
+            .filter(|t| t.can_handle(&event.category))
             .collect();
         if matches.is_empty() {
             return Err(Error::NoTarget(format!(
@@ -138,9 +156,7 @@ impl Router {
             )));
         }
 
-        // 4. Final selection among the matching targets, governed by the
-        //    configured strategy. Deterministic for a given (event, candidate
-        //    set, load) — never dependent on HashMap iteration order.
+        // 4. Final selection; every alternative was authorised above too.
         Ok(self.select(event, &matches))
     }
 
@@ -377,6 +393,74 @@ mod tests {
         let decision = router.route(&event).unwrap();
         assert_eq!(decision.target_id, "rpa-elysium");
         assert_eq!(decision.strategy, RoutingStrategy::TagMatch);
+    }
+
+    struct DenyTarget(&'static str);
+
+    impl CapabilityVerifier for DenyTarget {
+        fn verify(&self, _event: &AutomationEvent, target: &AutomationTarget) -> bool {
+            target.id != self.0
+        }
+
+        fn name(&self) -> &str {
+            "deny-target"
+        }
+    }
+
+    #[test]
+    fn policy_denied_direct_hint_fails_closed() {
+        let mut router = setup_router();
+        // A second, otherwise suitable target must not become an implicit
+        // fallback for an explicitly named but forbidden target.
+        let mut backup = AutomationTarget::rpa_elysium("backup-q");
+        backup.id = "backup-rpa".into();
+        backup.status = TargetStatus::Healthy;
+        router.register_target(backup);
+        let router = router.with_verifier(Box::new(DenyTarget("rpa-elysium")));
+        let event = AutomationEvent::new(EventSource::Manual { user: None }, "filesystem")
+            .with_target_hint("rpa-elysium");
+        assert!(router.route(&event).is_err());
+    }
+
+    #[test]
+    fn policy_denied_tag_target_is_skipped() {
+        let mut router = setup_router();
+        router.add_tag_rule("priority", "rpa-elysium");
+        router.add_tag_rule("priority", "web-auto");
+        let router = router.with_verifier(Box::new(DenyTarget("rpa-elysium")));
+        let event = AutomationEvent::new(EventSource::Manual { user: None }, "unknown")
+            .with_tag("priority");
+        let decision = router.route(&event).unwrap();
+        assert_eq!(decision.target_id, "web-auto");
+        assert_eq!(decision.strategy, RoutingStrategy::TagMatch);
+    }
+
+    #[test]
+    fn required_capability_cannot_be_bypassed_with_hint_or_tag() {
+        let mut router = setup_router();
+        router.add_tag_rule("force-web", "web-auto");
+        // web-auto does not advertise Filesystem; a hint or tag cannot grant it.
+        let hinted = AutomationEvent::new(EventSource::Manual { user: None }, "web")
+            .requiring(TargetCapability::Filesystem)
+            .with_target_hint("web-auto");
+        assert!(router.route(&hinted).is_err());
+
+        let tagged = AutomationEvent::new(EventSource::Manual { user: None }, "unknown")
+            .requiring(TargetCapability::Filesystem)
+            .with_tag("force-web");
+        assert!(router.route(&tagged).is_err());
+    }
+
+    #[test]
+    fn policy_also_filters_standard_and_failover_alternatives() {
+        let router = router_with(
+            RoutingStrategy::Failover,
+            &[("t-a", 100), ("t-b", 300), ("t-c", 200)],
+        )
+        .with_verifier(Box::new(DenyTarget("t-b")));
+        let decision = router.route(&web_event()).unwrap();
+        assert_eq!(decision.target_id, "t-c");
+        assert_eq!(decision.alternatives, vec!["t-a"]);
     }
 
     /// Build a router of N web-capable targets with explicit weights so the
