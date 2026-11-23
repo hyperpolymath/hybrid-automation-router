@@ -1,0 +1,257 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+// Owner: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+
+= HAR Ultraplan: Intent, Implementation, Production and Federation
+:toc: macro
+:toclevels: 3
+
+Status: proposed, evidence-backed programme for owner review.
+Reconnaissance date: 2026-11-23.
+Repository: https://github.com/hyperpolymath/hybrid-automation-router[hyperpolymath/hybrid-automation-router].
+Inspected default-branch HEAD: `0176b7d6a62f2fa2ba01a3b22714f6f2ba3df116` (2026-11-10).
+Execution evidence: GitHub tree/source, existing ADRs, tests and Actions metadata/logs. No fresh local Rust/Idris2/Zig build was possible in the assessment environment. Existing code/tests must not be presented as freshly executed.
+
+toc::[]
+
+== Decision summary
+
+HAR is *an implemented routing and dispatch library, an emerging automation meta-model, and a partially experimental first domain*, NOT yet an integrated production automation service. The ten-crate Rust workspace is the correct current inventory; previous seven/eight-crate summaries are stale. Phase 0 is established as repository scaffolding, but a green baseline is not established. Phase 1 has implemented routing/dispatch primitives but lacks a demonstrated ingestion-to-consumer-to-effect operational slice. Phase 2A contains graph/provenance/A2ML-codec scaffolding but not the full lowering/execution/lifting cycle. Phase 2C tier 1 has a hermetic, file-effect experiment; it does not yet capture arbitrary real installers. Phase 2B, tiers 2-5, enterprise and a deployed control plane remain later work.
+
+The first deliverable is NOT more routing algorithms. It is a bounded, policy-checked, observable, repeatable *actual dispatch* through one real adapter to one test consumer, with operation and transport outcomes distinguished. The second is a standalone declarative graph -> plan -> apply -> observe -> lift cycle over HAR's own route domain. Do not skip those gates.
+
+== Intension and extension
+
+=== Intension: what HAR is for
+
+HAR is a tool-neutral *automation coordination seam* between a desired effect and a permitted, verified realisation. Its defining properties should be:
+
+. Accept commands/events and desired-state descriptions from heterogeneous origins.
+. Represent requested effects, resources, dependencies, authority, and provenance in a stable typed model.
+. Choose among eligible actions/executors subject to capabilities, cost, health, constraints and policy.
+. Lower a desired state into a bounded, reviewable, deterministic, effect-aware execution plan.
+. Execute or delegate to independently useful tools; report *observed outcome*, not merely transport acknowledgement.
+. Preserve identity, ownership, ambiguity and loss across handoff, retries and recovery.
+. Lift executed operations back toward declarative description within a declared equivalence domain, explicitly preserving non-reconstructible residue.
+. Federate heterogeneous tool inventories and handoff without requiring those tools to be replaced.
+
+The original event-router use case remains a first-class standalone product, not an expendable stepping stone. The owner-oriented broader estate vision can later connect HAR with RPA Elysium, Hypatia, Gitbot Fleet, Git Logistics, Reposystem, Pons/Panic, and capability gateways. Do not fold their responsibilities into HAR without a real integration contract.
+
+=== Extension: what it actually covers
+
+* Currently implemented source extension: ten Rust workspace crates (`har-abi`, `har-core`, `har-meta`, `har-install`, `har-config`, `har-dispatch`, `har-health`, `har-metrics`, `har-router`, `har-cli`).
+* Current executable/verified-in-source behaviours: route selection and seven strategies, config CRUD/JSON validation, delivery adapter trait, bounded retry/circuit breaker/per-target semaphore, in-memory and JSONL dead-letter sinks, metrics snapshots, shared Rust queue envelope/receipt codec, NATS publish (optional `nats` feature), resource DAG ordering/handoff model, A2ML v0.1 graph serialization, and simulated file-install capture/uninstall/reinstall tests.
+* Important limitations: CLI `route` is explicitly *dry-run* and does not dispatch. The default health probe always says healthy. The NATS live smoke test is ignored/gated and no RPA Elysium consumer effect was observed. An executor that only simulates install activity does not prove real `curl | sh` capture. There is no checked-in `har-il`, Gleam backend, PanLL HAR panel, or multi-tool adapters.
+* Formal extension: `PROOF-NEEDS.adoc` records three closed Idris2 obligations and Rust property tests, but no-event-loss and no-duplicate claims rely on explicit external premises; they do NOT prove cross-process, crash-surviving, effect-level exactly-once delivery. Verify buildability and correspondence to the current Rust implementation, not proof text alone.
+* Governance extension: ADR-0002 (2026-07-06) sets interlingua direction but is marked 'Proposed (owner ratification pending)'. ADR-0003 (2026-07-07) is Accepted and defines owner-directed five-tier installation order. Both currently name A2ML as carrier, while estate policy has since advanced to DEED; this requires explicit compatibility/standards adjudication, not mechanical text substitution.
+* Out of active scope: speculative replacement of Puppet/Salt/Terraform/Ansible. ADR-0002 explicitly parks replacement pending sponsorship or contributors; interoperability remains active.
+
+== Three distinct endpoints
+
+=== U: first independently usable product
+
+A local/controlled HAR process consumes one actual event source, authorises a requested capability, resolves one real target, transmits an envelope via an adapter, receives a consumer acknowledgement, records a correlated result, and exposes a truthful CLI status. The test includes a failing target, retry budget, dead letter, trace and replay. No privileged system mutation required. Can be used standalone without Gleam/PanLL.
+
+=== P: production-ready product (bounded, not universal)
+
+A defined deployment profile supporting at least one real target and one source, with authenticated admission, policy enforced on *every* route path, versioned envelopes, bounded size/queue/concurrency, explicit delivery semantics, durable operation/outcome journal, recoverable and quarantined uncertain effects, structured metrics/traces, operator runbooks, CI green, vulnerability triage, tested upgrade/rollback, and incident/reconciliation procedures. Claims are scoped per adapter and effect, not global 'exactly once'. Production is a quality gate, NOT synonymous with Phase 6 enterprise.
+
+=== E: intended open-project end-state
+
+A tool-neutral declarative/imperative automation interlingua with tested lowering, effect-aware lifting, semantic residuals, cross-tool resource ownership/handoff, provenance, package-install provider ladder, real adapters, federated inventory/conflict detection, and typed safety contracts. Optional downstream extensions: adaptive/cost-aware routing, estate-graph and constrained route-family optimisation, scheduler/agent federation, distributed operations and enterprise profiles. End-state does not imply replacing incumbent automation suites, requiring a single broker, or pretending irreversible effects can be undone.
+
+== Source-of-truth reconciliation
+
+[cols="1,2,2",options="header"]
+|===
+|Artefact |Evidence |Action
+|Cargo.toml |Ten workspace crates |Authoritative source inventory; update README/ROADMAP counts
+|README.adoc |Says seven/eight crates, CLI examples imply live route |Correct to dry-run and explicit dispatch status
+|ROADMAP.adoc |Phases 0-6, A2ML direction, 2A/2B/2C |Preserve programme and amend statuses by executable evidence
+|TOPOLOGY.adoc |Old phase numbers and ~50% figure; marks missing PanLL panels 100% |Rebuild dashboard from acceptance gates; retire unsupported percentage
+|docs/decisions/0002-* |Proposed status; interlingua and replacement scope |Request owner ratification; do not silently mark Accepted
+|docs/decisions/0003-* |Accepted owner-directed tier order |Preserve strict 1 -> 2 -> 3 -> 4 -> 5 and D1 -> D2 -> D3
+|docs/plans/bounded-recovery-pilot.adoc |Proposed controlled interference-safe experiment |Keep separate; use as effect-recovery gate
+|PROOF-NEEDS.adoc |Claims checked 2026-07-06, conditional premises |Rebuild and map each theorem to executable runtime property
+|===
+
+== Aspect-oriented seam register
+
+Statuses: OBSERVED = inspected source/CI; INFERRED = reasoned from source; UNKNOWN = unverified. Impact is conditional on the proposed use.
+
+[cols="1,2,2,3",options="header"]
+|===
+|ID |Seam |Finding |Required control/test
+|S-01 |Ingress -> event |OBSERVED: event source types exist; end-to-end filesystem/webhook/cron/queue watchers not demonstrated; CLI creates manual test events |One actual bounded ingestion adapter; origin identity, validation, size/rate caps, replay test
+|S-02 |Event -> router policy |OBSERVED: direct target hint and tag-rule branches return before `CapabilityVerifier`; default verifier is `AllowAll` |Common policy gate applied to all routing paths incl. hints, tags and fallback; deny-by-default at privileged deployment boundary
+|S-03 |Router -> dispatcher |OBSERVED: router and dispatcher are distinct libraries; CLI route is dry-run |Real orchestration slice; tie event/decision/attempt/receipt IDs and tracing
+|S-04 |Dispatcher -> broker/target |OBSERVED: NATS feature has publisher and JetStream ack; integration test ignored; receipt means delivery/transport only |Live broker + consumer smoke, duplicate/ack-loss injection, version negotiation, explicit broker-vs-effect semantics
+|S-05 |Dispatch -> side effect |OBSERVED: retry loop does not classify effects that may have happened before error |Operation fingerprint, attempt ID, idempotency ledger; quarantine ambiguous execution, no blind reapplication
+|S-06 |Desired graph -> plan -> observed graph |OBSERVED: `har-meta` supports graph ordering and ownership; `har-il` absent |Typed plan IR, effect model, check/apply/observe/lift cycle with semantic equivalence and loss record
+|S-07 |Install spec -> actual host |OBSERVED: `har-install` executor gate uses `SimulatedExecutor`; actual files only under private temporary root |Real sandboxed/traced executor behind identical trait, supply-chain integrity, privilege separation, resource-identity and rollback safety
+|S-08 |Ownership -> tool handoff |OBSERVED: in-memory ownership transfer/checkpoint in graph; no tested Puppet/Salt handoff |Versioned durable checkpoint, conflict and idempotency tests, transactional admission and ownership lease/fencing
+|S-09 |Proof/spec -> executable code |OBSERVED: Idris2 files and conditional proof claims; Zig FFI scaffold; no current toolchain run |Check current Idris2 builds, ABI mirror tests, Zig boundary conformance, runtime refinement evidence
+|S-10 |Control plane -> operators |OBSERVED: metrics collector in memory; health default always green; workflow failures |Real health probes, telemetry export, alerts, runbooks, crash/restart restore, failure budgets
+|S-11 |Format/governance -> automation |OBSERVED: 82 legacy `.a2ml` files, six `.k9.ncl` examples/templates, no `.deed`; ADRs name A2ML |Consult current DEED ANBF and both K9 + coordination protocol ANBFs in standards; inventory/conflict matrix; migrate only eligible files with parser/tests and backwards-compatibility plan
+|S-12 |Estate integration -> other tools |INFERRED: HAR should be execution/routing seam, not source of truth for Hypatia findings, Gitbot mutations or Git Logistics decision graphs |Define identity/receipt/policy contracts with first concrete second consumer; avoid speculative dependency cycles
+|===
+
+=== Eight-lens survey
+
+* Wire: ASSESSED for Rust routing, dispatch, NATS and declared integration boundaries; external consumers not observed.
+* Conway/ownership: PARTIALLY ASSESSED; repository owner and ADRs known, incident/service ownership unknown.
+* Run/operations: ASSESSED by CI metadata and health/metrics code; no production traces or load measurements.
+* Gate/security: ASSESSED in code paths and dependency audit; external capability gateway and tenant controls unverified.
+* Break/failure: ASSESSED in retry and recovery documents; crash/broker fault injection unexecuted.
+* Flow/consistency: ASSESSED in resource graph/dispatch source; cross-process durable outcomes unknown.
+* Evolution: ASSESSED through ADRs/plan, interface boundaries and compatibility direction.
+* Cost: PARTIALLY ASSESSED; no measured running cost, fleet load or quantified SLA. Do not invent savings.
+
+== Immediate blockers (P0)
+
+* B-01 (security): 2026-11-23 Cargo Audit run 45122982038 failed: seven vulnerability findings and five denied warnings. Locked `rustls 0.23.43` is among cited vulnerable versions; log recommends >=0.23.46 for several advisories. Triage exact dependency paths, feature exposure and safe compatible updates; retest. Issue #138 remains open.
+* B-02 (CI): latest 2026-11-10 push reports Rust CI failure, Hypatia failure, Scorecard failure and Static Analysis startup failure; Coverage and CodeQL successes do not cancel them. Obtain executable reusable-workflow failure detail (or reproduce under controlled runner); classify syntax/permissions/upstream/environment/test causes. Do not infer source-code test failure from a workflow conclusion alone.
+* B-03 (truthfulness): actual 10-crate inventory, dry-run CLI and absent panels contradict older README/TOPOLOGY claims. Repair before using those dashboards for gating.
+* B-04 (authority): routing shortcuts bypass policy verification; close before privileged adapter deployments.
+* B-05 (formats): A2ML legacy carrier must be reconciled against DEED ANBF before new canonical interchange depends on it.
+* B-06 (proofs): current CI/proof check and assumptions must be reproducible; no end-to-end exactly-once claim.
+
+== Ultraplan: risk-ordered, resumable gates
+
+The gates below augment, not replace, ROADMAP phases and the accepted ADR-0003 ordering. A blocked gate stops authority expansion; safe independent branches (documentation, hermetic tests) may continue. Each tranche should be a bounded, reviewable PR with evidence and rollback/forward-recovery notes.
+
+=== G0: establish a trustworthy baseline
+
+* Inventory workspace/features/tests/CLI and planned vs real adapters at pinned SHA; snapshot current dependency tree.
+* Resolve or explicitly triage B-01..B-04; fix reusable CI workflow launch/step errors and classify all required checks.
+* Refresh README, ROADMAP and TOPOLOGY with the ten-crate inventory and honest operational status. Keep historical completion percentages clearly historical.
+* Record ADR-0002 ratification question and DEED/legacy-A2ML migration decision. Check both ANBFs for all six `.k9.ncl` files, record each outcome; do not claim conformance until tested.
+* Acceptance: reproducible `cargo fmt --check`, `cargo clippy --workspace --all-targets`, `cargo test --workspace` and `idris2 --build har-abi.ipkg` with current pinned toolchains, or explicit fail/block reports; required CI status is explained and tracked. No new sources of truth invented.
+
+=== G1: the first real HAR vertical slice (minimal usable)
+
+* Add controlled event intake (manual request, local watched event, or equivalent) and an actual runtime `route -> dispatch -> adapter` operation; retain `route` as dry-run and expose an unambiguous different `dispatch` action.
+* Use one selected broker/target pairing in disposable isolated test infrastructure; keep transport behind `TargetTransport`, and avoid making NATS itself part of the abstract ABI.
+* Make health probe real or report `unknown` when not configured; attach stable correlation IDs and a JSON evidence receipt.
+* Tests: capability denied/allowed, unavailable target, success, timeout, circuit open, dead-letter sink failure, lost ack, duplicate delivery, consumer restart.
+* Acceptance: event reaches a real test consumer, evidence distinguishes transmitted/acknowledged/applied, restart behaviour is documented. Do not turn a broker ack into an effect certificate.
+
+=== G2: authority, integrity and bounded failure semantics
+
+* Apply capability verifier to every selection path (hint, tag, capability, fallback) with a common authorised-candidate set. Keep permissive verification only for explicit local demo mode.
+* Define operation_id distinct from attempt_id; stable fingerprint, resource identity and owner; dedupe scope, retention and reconciliation contract.
+* Introduce typed result states: rejected-before-effect, sent, broker-acknowledged, applied, effect-uncertain, recovered, recovery-conflict. Retry only when effect-safe by contract.
+* Test process crash and re-delivery through a durable pilot ledger; reason about fencing, lease expiry and caller permissions; define bounded DLQ retention.
+* Acceptance: failure matrix demonstrates no duplicate *business effect* for the supported idempotent fixture; ambiguous effects are quarantined rather than silently retried. The exact guarantees are bounded by fixture, platform and retention scope.
+
+=== G3: finish Phase 2A on HAR's own routing domain
+
+* Implement `har-il` (or a clearly named equivalent) with declarative graph, planned operations, pre/postconditions, dependency DAG, effect summaries and explicit non-invertible/residual markers.
+* Lower a desired route topology into a deterministic plan, review/dry-run it, apply it to a local HAR routing configuration, observe real resulting topology, then lift an equivalent declarative description.
+* Establish equivalence by resource identities and declared semantics; do NOT demand byte-identical source round-trip where lifting is lossy. Preserve unsupported annotations and an explicit loss witness/residue.
+* Align Rust model with normative Idris2 spec through machine-checkable contract tests and checked ABI invariants. The proof-model-to-runtime correspondence is an explicit obligation.
+* Acceptance: self-contained graph -> plan -> apply -> observe -> lift -> semantic-compare test, including precondition conflict, partial failure, unchanged resource, duplicate operation and schema version evolution. This is the 2A gate before external multi-tool claims.
+
+=== G4: bounded recovery pilot (independent of speculative universal undo)
+
+* Implement `docs/plans/bounded-recovery-pilot.adoc` as written: one private Unix temporary directory, regular file <=64KiB, <=128 in-session operations, cooperative single-writer fixture, resource identity/fingerprint and uncertainty states.
+* First direct-executor tests, then HAR adapter tests with one attempt, then lost-ack/ambiguous-write tests at two attempts.
+* No arbitrary shell commands, production paths, symlinks, hostile writers, or cross-restart guarantee at this stage. No blind Valence undo pre-check; evaluate reuse only against the contract.
+* Acceptance: full interference matrix passes, conflicting modifications survive untouched, partial/unknown effects are quarantined. Production requires a further durable ledger/host isolation gate.
+
+=== G5: Phase 2C install regularisation in owner-mandated order
+
+* Tier 1: keep the existing `har-install` model and hermetic gate, then validate provenance/integrity/footprint on explicitly sandboxed real installers. Differentiate declared manifests, observed traces, external side effects, and files the model cannot represent. Build one declarative inventory for pinned prover/solver/language-toolchain samples.
+* Tier 2: forge releases/tag-pinned sources; checksums, attestations, platform asset selection, offline/replay and rate-limit behaviour; no unpinned remote execution in tests.
+* Tier 3: `.deb`/`.rpm` direct-file installs and scriptlet-effects model.
+* Tier 4: define `PackageProvider` against apk/scoop/chocolatey and retrofit tiers 1-3.
+* Tier 5: validate the interface against apt/dnf/Homebrew/winget, treating Guix/Nix as declarative calibration references rather than a forced tier.
+* Breadth-before-depth: D1 presence/version/install/remove/upgrade/integrity/footprint across tiers first; then D2 front-end capabilities; then D3 enterprise provisioning/harnesses.
+* Acceptance: same declared intent produces semantically equivalent observed state across selected providers, with explicit variance, retained provenance, no unexplained host mutation and reproducible proof-toolchain corpus. Do NOT call hermetic simulated files real host tracing.
+
+=== G6: Phase 2B cross-tool interlingua and federation
+
+* First establish format carrier policy: map the existing A2ML v0.1 dialect to current DEED ANBF only if the current standard can represent its semantics; define backwards-compatible read/write windows, schema version, canonicalisation (kYAML/iJSON-JCS where applicable), and cross-format golden tests.
+* Import a bounded Puppet partial catalog into the common resource graph; checkpoint and transfer ownership; resume a safe slice via Salt without duplicate application.
+* Add minimal Terraform (declarative) and Ansible (imperative) front-ends, use round-trip-equivalence plus explicit loss/residual checks. Never promise lossless arbitrary-language translation.
+* Federate two inventories, identify ownership overlap, unknown state and stale observations; default to refusal/quarantine on conflicting authority.
+* Acceptance: two independent real tools coordinate through one documented interchange contract, survive a handoff failure and explain all unresolved residues and side effects. This is the flagship interlingua claim.
+
+=== G7: production and operational hardening
+
+* Define deployment profile, supported platforms, resource limits, health/readiness, operator controls, telemetry and tamper-evident audit receipts. Set workload-specific latency/success/recovery SLOs only after measuring.
+* Add failure drills (lost broker, credential expiry, poison message, duplicate, concurrent writer, stale graph, corrupted journal, deploy rollback) in isolated infrastructure with abort and reconciliation evidence.
+* Implement minimum required source adapters, target adapters and observability feed. Keep Gleam, PanLL and external broker optional unless proven necessary for the chosen production profile.
+* Acceptance: production checklist signed with applicable tests passing, zero unresolved critical security issues for the deployment, runbooks exercised, backup/restore/upgrade verified, and no unknown failure classified as successful execution.
+
+=== G8: extended estate end-state (conditional)
+
+* Integrate external estate decision graph as *input*, not as HAR-owned truth: inventory from Reposystem/Git Logistics, findings from Hypatia/Pons/Panic, action identities/capabilities from Gitbot Fleet and bag-of-actions.
+* Permit sparse route-family enumeration, forbidden-region pruning, scored top route bundles and fallback selection only after the operational contracts are sound. Justify ranking algorithms with actual signals and evaluate deterministic reproducibility.
+* Optional: adaptive scoring, PanLL/Gossamer visualisation, enterprise tenancy/SSO, proof-pipeline domain, neurophone sensor/inference sources. These are extensions, not G1/G3 blockers.
+* Replacement of incumbents remains sponsor/contributor-gated, per ADR-0002; do not quietly re-scope.
+
+== Product milestones and state boundaries
+
+[cols="1,2,2",options="header"]
+|===
+|Label |Can truthfully claim |Cannot yet claim
+|M0: today |Implemented routing/dispatch/meta-model libraries and hermetic install experiment |Operational automation system or enterprise handoff
+|M1: usable router (G0-G1) |Real selected source -> policy -> broker/consumer delivery in test profile |Crash-safe effect exactly once
+|M2: standalone automation engine (G2-G4) |Bounded reconciled effects and declarative/imperative self-round-trip |Arbitrary OS undo or multi-tool universal semantics
+|M3: production profile (G7 plus relevant G2/G3 gates) |Supported real workload with tested deployment, authority, recovery and observation |All adapters/providers or a universal guarantee
+|M4: federation/interlingua (G5-G6) |Heterogeneous tools exchange a documented partial-state model with evidence |Lossless arbitrary automation language translation
+|M5: open-project target (G8 where justified) |Extensible governance-aware automation federation |Mandatory replacement of incumbents or unfunded enterprise parity
+|===
+
+Do not assign a single completion percentage across these incompatible denominators. Use gate counts *within an explicitly defined profile* and document partial/unknown status.
+
+== Evidence and risk priority
+
+* R-01 HIGH (observed): authorisation bypass path in `har-router/src/lib.rs` (S-02). Verify under a denied verifier and patch.
+* R-02 HIGH (observed): retry acknowledges transport, not effect; uncertain side effects not handled in dispatch loop (S-05). Resolve before non-idempotent execution.
+* R-03 HIGH (observed): 2026-11-23 audit failure and red CI (S-10/S-11). Explain each failure and remediate relevant exposure before production.
+* R-04 HIGH for claims (observed): absent `har-il` / actual integrated 2A loop (S-06). Prevent premature 'interlingua complete' branding.
+* R-05 MEDIUM (observed): fake default health probe and dry-run-only CLI (S-01/S-03/S-10). Correct status/operation wording.
+* R-06 MEDIUM (inferred): legacy A2ML carrier versus current DEED ANBF makes schema governance ambiguous (S-11). Standards-led design decision needed before format expansion.
+* R-07 MEDIUM (observed): installation simulator proves bounded footprint cycle, not host-wide reversibility (S-07). Keep containment and proof-of-effect limits.
+* R-08 UNKNOWN: cross-system deployment cost/capacity/failure budget. Measure, do not estimate without inputs.
+
+== Outstanding owner decisions (do not block safe groundwork)
+
+. Ratify or amend ADR-0002's proposed status and explicitly preserve the no-replacement-without-sponsorship boundary.
+. Choose the *first supported production effect domain*: non-mutating RPA delivery, isolated file mutation, or a restricted package-install workload. G1 itself can use a disposable non-mutating consumer.
+. Determine the canonical DEED interchange representation and compatibility window *after* reading its ANBF and comparing existing codec semantics.
+. Decide when separate Gleam/BEAM service and PanLL/Gossamer UI add sufficient value; neither should be a prerequisite for local standalone correctness.
+
+== Initial PR queue (proposed)
+
+. Documentation truth + audit evidence / CI failure classification (G0).
+. Common capability gate / denied-hint and denied-tag tests (G2).
+. Actual CLI dispatch -> selected NATS test consumer with correlated receipts (G1).
+. Real health probe or explicit unknown state; cancellation/timeouts and bounded queue profile (G1-G2).
+. Typed operation outcome/attempt ID and lost-ack quarantine fixture (G2).
+. Declarative route topology IR + lower/apply/observe/lift acceptance suite (G3).
+. Controlled recovery pilot per existing contract (G4).
+. Standards-led DEED and K9 conformance inventory with separately reviewable migration (G0/G6).
+. Install tier-1 controlled real-executor validation then tier-2 adapter (G5).
+
+Each PR should state baseline SHA, objective, changed files, affected seams, tests run (not just written), decision gates, impact, rollback/forward recovery, and remaining unknowns. Prefer small orthogonal PRs; no speculative broad refactor before a demonstrated passing test baseline.
+
+== Source links
+
+* https://github.com/hyperpolymath/hybrid-automation-router/blob/main/Cargo.toml[Workspace membership]
+* https://github.com/hyperpolymath/hybrid-automation-router/blob/main/crates/har-cli/src/main.rs[CLI dry-run]
+* https://github.com/hyperpolymath/hybrid-automation-router/blob/main/crates/har-router/src/lib.rs[Selection paths and verifier]
+* https://github.com/hyperpolymath/hybrid-automation-router/blob/main/crates/har-dispatch/src/lib.rs[Dispatcher retry and adapter]
+* https://github.com/hyperpolymath/hybrid-automation-router/blob/main/crates/har-dispatch/src/nats.rs[NATS transport]
+* https://github.com/hyperpolymath/hybrid-automation-router/blob/main/crates/har-health/src/lib.rs[Default health probe]
+* https://github.com/hyperpolymath/hybrid-automation-router/blob/main/crates/har-meta/src/graph.rs[Resource graph, handoff, ordering]
+* https://github.com/hyperpolymath/hybrid-automation-router/blob/main/crates/har-install/src/capture.rs[Simulation-bound capture]
+* https://github.com/hyperpolymath/hybrid-automation-router/blob/main/docs/decisions/0002-automation-interlingua-declarative-imperative.adoc[ADR-0002]
+* https://github.com/hyperpolymath/hybrid-automation-router/blob/main/docs/decisions/0003-install-domain-staged-subsumption-ladder.adoc[ADR-0003]
+* https://github.com/hyperpolymath/hybrid-automation-router/blob/main/docs/plans/bounded-recovery-pilot.adoc[Bounded recovery pilot]
+* https://github.com/hyperpolymath/hybrid-automation-router/blob/main/PROOF-NEEDS.adoc[Proof register]
+* https://github.com/hyperpolymath/hybrid-automation-router/actions/runs/45122982038[Cargo Audit (2026-11-23)]
+* https://github.com/hyperpolymath/hybrid-automation-router/issues/138[Open security issue]
+* https://github.com/hyperpolymath/hybrid-automation-router/issues/102[Install umbrella]
