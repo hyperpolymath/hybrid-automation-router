@@ -238,6 +238,13 @@ Do not assign a single completion percentage across these incompatible denominat
 
 Each PR should state baseline SHA, objective, changed files, affected seams, tests run (not just written), decision gates, impact, rollback/forward recovery, and remaining unknowns. Prefer small orthogonal PRs; no speculative broad refactor before a demonstrated passing test baseline.
 
+== Execution log: 2026-11-23 (follow-up)
+
+* G2/S-02: draft https://github.com/hyperpolymath/hybrid-automation-router/pull/175[PR #175] implements a common eligibility predicate (availability, explicit required-capability intersection and configured verifier) across hints, tags and ordinary matching. Six focused regression tests were added. This is *committed but unverified*, not merged.
+* Local test blocker: the container available in this session has no Cargo installation and cannot resolve github.com. A successful targeted Rust test and full-workspace CI check are still required before S-02 can be marked closed.
+* G0 Cargo Audit: https://github.com/hyperpolymath/hybrid-automation-router/actions/runs/45122982038[2026-11-23 run] scanned 254 locked crates and reports seven vulnerabilities plus five denied warnings. Four rustls advisories affect locked 0.23.43 (RUSTSEC-2026-0348, 0346, 0349, 0285); rustls-webpki 0.103.13 (0382), url 2.5.8 (0592), webpki-roots 1.0.8 (0381) complete the seven. The scanner gives patched baselines: rustls >=0.23.46; rustls-webpki >=0.103.16 (stable branch); url >=2.5.9; webpki-roots >=1.0.10. Warnings were chrono 0.4.44 (unmaintained), anyhow 1.0.102 (0190), rustix 1.1.4 (0486), tokio 1.50.0 (0386) and yanked chacha20 0.10.1. Verify patch compatibility, transitive paths and enabled-feature exposure before updating Cargo.lock.
+* Initial PR #175 combined-status read shows `pre-commit.ci - pr` in error. The service log has not been examined and the reason is unknown. Existing Rust CI and Hypatia jobs have failed in previous runs; do not attribute those failures to the new policy change without a reproducible trace.
+
 == Source links
 
 * https://github.com/hyperpolymath/hybrid-automation-router/blob/main/Cargo.toml[Workspace membership]
