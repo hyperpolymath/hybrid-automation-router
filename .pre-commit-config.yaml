@@ -7,6 +7,9 @@
 ci:
   autofix_prs: false
   autoupdate_schedule: quarterly
+  # Hosted pre-commit.ci (full) cannot run `language: system`; the same check
+  # runs locally and in the central proven gate, so skip it here.
+  skip: [har-spdx-header]
 
 repos:
   - repo: local
