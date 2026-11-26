@@ -40,7 +40,7 @@ jobs:
               { exit (found ? 0 : 1) }
               END { if (!found) exit 1 }
             ' "$f"; then
-              echo "ERROR: $f missing SPDX header in leading comments"
+              echo "ERROR: $f missing SPDX header in leading comments" >&2
               errors=$((errors + 1))
             fi
           done
