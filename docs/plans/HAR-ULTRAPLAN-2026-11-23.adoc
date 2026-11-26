@@ -135,6 +135,7 @@ The gates below augment, not replace, ROADMAP phases and the accepted ADR-0003 o
 * Make health probe real or report `unknown` when not configured; attach stable correlation IDs and a JSON evidence receipt.
 * Tests: capability denied/allowed, unavailable target, success, timeout, circuit open, dead-letter sink failure, lost ack, duplicate delivery, consumer restart.
 * Acceptance: event reaches a real test consumer, evidence distinguishes transmitted/acknowledged/applied, restart behaviour is documented. Do not turn a broker ack into an effect certificate.
+* Authority acceptance: a denied-capability test must also fail closed on the direct-hint and tag-rule shortcut paths, not only on normal selection (see PR #173 for the router change; G2 generalises it).
 
 === G2: authority, integrity and bounded failure semantics
 
@@ -255,18 +256,18 @@ Each PR should state baseline SHA, objective, changed files, affected seams, tes
 
 == Source links
 
-* https://github.com/hyperpolymath/hybrid-automation-router/blob/main/Cargo.toml[Workspace membership]
-* https://github.com/hyperpolymath/hybrid-automation-router/blob/main/crates/har-cli/src/main.rs[CLI dry-run]
-* https://github.com/hyperpolymath/hybrid-automation-router/blob/main/crates/har-router/src/lib.rs[Selection paths and verifier]
-* https://github.com/hyperpolymath/hybrid-automation-router/blob/main/crates/har-dispatch/src/lib.rs[Dispatcher retry and adapter]
-* https://github.com/hyperpolymath/hybrid-automation-router/blob/main/crates/har-dispatch/src/nats.rs[NATS transport]
-* https://github.com/hyperpolymath/hybrid-automation-router/blob/main/crates/har-health/src/lib.rs[Default health probe]
-* https://github.com/hyperpolymath/hybrid-automation-router/blob/main/crates/har-meta/src/graph.rs[Resource graph, handoff, ordering]
-* https://github.com/hyperpolymath/hybrid-automation-router/blob/main/crates/har-install/src/capture.rs[Simulation-bound capture]
-* https://github.com/hyperpolymath/hybrid-automation-router/blob/main/docs/decisions/0002-automation-interlingua-declarative-imperative.adoc[ADR-0002]
-* https://github.com/hyperpolymath/hybrid-automation-router/blob/main/docs/decisions/0003-install-domain-staged-subsumption-ladder.adoc[ADR-0003]
-* https://github.com/hyperpolymath/hybrid-automation-router/blob/main/docs/plans/bounded-recovery-pilot.adoc[Bounded recovery pilot]
-* https://github.com/hyperpolymath/hybrid-automation-router/blob/main/PROOF-NEEDS.adoc[Proof register]
+* https://github.com/hyperpolymath/hybrid-automation-router/blob/0176b7d6a62f2fa2ba01a3b22714f6f2ba3df116/Cargo.toml[Workspace membership]
+* https://github.com/hyperpolymath/hybrid-automation-router/blob/0176b7d6a62f2fa2ba01a3b22714f6f2ba3df116/crates/har-cli/src/main.rs[CLI dry-run]
+* https://github.com/hyperpolymath/hybrid-automation-router/blob/0176b7d6a62f2fa2ba01a3b22714f6f2ba3df116/crates/har-router/src/lib.rs[Selection paths and verifier]
+* https://github.com/hyperpolymath/hybrid-automation-router/blob/0176b7d6a62f2fa2ba01a3b22714f6f2ba3df116/crates/har-dispatch/src/lib.rs[Dispatcher retry and adapter]
+* https://github.com/hyperpolymath/hybrid-automation-router/blob/0176b7d6a62f2fa2ba01a3b22714f6f2ba3df116/crates/har-dispatch/src/nats.rs[NATS transport]
+* https://github.com/hyperpolymath/hybrid-automation-router/blob/0176b7d6a62f2fa2ba01a3b22714f6f2ba3df116/crates/har-health/src/lib.rs[Default health probe]
+* https://github.com/hyperpolymath/hybrid-automation-router/blob/0176b7d6a62f2fa2ba01a3b22714f6f2ba3df116/crates/har-meta/src/graph.rs[Resource graph, handoff, ordering]
+* https://github.com/hyperpolymath/hybrid-automation-router/blob/0176b7d6a62f2fa2ba01a3b22714f6f2ba3df116/crates/har-install/src/capture.rs[Simulation-bound capture]
+* https://github.com/hyperpolymath/hybrid-automation-router/blob/0176b7d6a62f2fa2ba01a3b22714f6f2ba3df116/docs/decisions/0002-automation-interlingua-declarative-imperative.adoc[ADR-0002]
+* https://github.com/hyperpolymath/hybrid-automation-router/blob/0176b7d6a62f2fa2ba01a3b22714f6f2ba3df116/docs/decisions/0003-install-domain-staged-subsumption-ladder.adoc[ADR-0003]
+* https://github.com/hyperpolymath/hybrid-automation-router/blob/0176b7d6a62f2fa2ba01a3b22714f6f2ba3df116/docs/plans/bounded-recovery-pilot.adoc[Bounded recovery pilot]
+* https://github.com/hyperpolymath/hybrid-automation-router/blob/0176b7d6a62f2fa2ba01a3b22714f6f2ba3df116/PROOF-NEEDS.adoc[Proof register]
 * https://github.com/hyperpolymath/hybrid-automation-router/actions/runs/45122982038[Cargo Audit (2026-11-23)]
 * https://github.com/hyperpolymath/hybrid-automation-router/issues/138[Open security issue]
 * https://github.com/hyperpolymath/hybrid-automation-router/issues/102[Install umbrella]
