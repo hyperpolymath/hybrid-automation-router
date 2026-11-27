@@ -28,8 +28,19 @@ jobs:
           errors=0
           for f in .github/workflows/*.yml .github/workflows/*.yaml; do
             [ -f "$f" ] || continue
-            if ! head -1 "$f" | grep -q "SPDX-License-Identifier"; then
-              echo "ERROR: $f missing SPDX header"
+            # gh actions-lock prepends its own managed-file comment before
+            # SPDX. Require SPDX in the *leading comment block*, before any
+            # executable YAML, rather than insisting it occupy line one.
+            if ! awk '
+              /^[[:space:]]*#/ {
+                if ($0 ~ /SPDX-License-Identifier:[[:space:]]*[^[:space:]]/) found = 1
+                next
+              }
+              /^[[:space:]]*$/ { next }
+              { exit (found ? 0 : 1) }
+              END { if (!found) exit 1 }
+            ' "$f"; then
+              echo "ERROR: $f missing SPDX header in leading comments" >&2
               errors=$((errors + 1))
             fi
           done
