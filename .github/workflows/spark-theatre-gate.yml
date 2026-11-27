@@ -3,7 +3,7 @@
 # This workflow is managed by gh actions-lock.
 # This workflow is managed by gh actions-lock.
 # Estate SPARK Theatre Gate — thin caller of the reusable workflow in
-# hyperpolymath/standards (#135 / #141). Pinned by commit SHA per the
+# metadatastician/standards (#135 / #141). Pinned by commit SHA per the
 # estate action-pinning policy. Regenerate the pin only when the reusable
 # workflow is intentionally bumped.
 name: SPARK Theatre Gate
@@ -22,8 +22,8 @@ jobs:
     # NOTE: a reusable-workflow caller job may only set uses/with/secrets/etc.
     # `timeout-minutes` is NOT permitted here and makes GitHub reject the whole
     # workflow (startup_failure on every push). The timeout belongs inside the
-    # reusable workflow in hyperpolymath/standards, not on the caller.
-    uses: hyperpolymath/standards/.github/workflows/spark-theatre-gate.yml@84355587cb2a1f86e6882de83514a32db2646e7a
+    # reusable workflow in metadatastician/standards, not on the caller.
+    uses: metadatastician/standards/.github/workflows/spark-theatre-gate.yml@84355587cb2a1f86e6882de83514a32db2646e7a
     with:
       paths: "."
       enforce_zero_contract: false

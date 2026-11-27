@@ -23,12 +23,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
 
-      - name: Check SPDX headers
+      - name: Check SPDX headers (including managed banner)
         run: |
           errors=0
           for f in .github/workflows/*.yml .github/workflows/*.yaml; do
             [ -f "$f" ] || continue
-            if ! head -1 "$f" | grep -q "SPDX-License-Identifier"; then
+            if ! head -n 5 "$f" | grep -q "SPDX-License-Identifier"; then
               echo "ERROR: $f missing SPDX header"
               errors=$((errors + 1))
             fi
