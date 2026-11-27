@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: MPL-2.0
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+# Owner: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# The hosted pre-commit.ci service requires this repository-level file.
+# Keep this intentionally small: no Python/Node package or compiler runtime.
+ci:
+  autofix_prs: false
+  autoupdate_schedule: quarterly
+  # Hosted pre-commit.ci (full) cannot run `language: system`; the same check
+  # runs locally and in the central proven gate, so skip it here.
+  skip: [har-spdx-header]
+
+repos:
+  - repo: local
+    hooks:
+      - id: har-spdx-header
+        name: HAR SPDX header on source and workflow files
+        entry: bash hooks/check-spdx-headers.sh
+        language: system
+        files: '(^crates/.*\.rs$|^src/abi/.*\.(idr|eph)$|^ffi/zig/.*\.zig$|^\.github/workflows/.*\.ya?ml$)'
+        types: [file]
+        pass_filenames: true
